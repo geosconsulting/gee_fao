@@ -186,25 +186,49 @@ class L1WaterProductivity(WaterProductivityCalc):
 
     def generate_areal_stats(self, paese, wbpm_calc):
 
-        """INCOMPLETE  Calculates several statistics for the Water Productivity calculated raster for a chosen country"""
+        """Calculates several statistics for the Water Productivity calculated raster for a chosen country"""
 
         just_country = self.countries.filter(ee.Filter.eq('Country', paese))
         cut_poly = just_country.geometry()
         scala = wbpm_calc.projection().nominalScale().getInfo()
 
-        country_stats = wbpm_calc.reduceRegion(
+        country_mean = wbpm_calc.reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=cut_poly,
             scale=scala,
             maxPixels=1e9
         )
-        return country_stats.getInfo()
+        mean = country_mean.getInfo()
+        mean['mean'] = mean.pop('b1')
+
+        reducers = ee.Reducer.minMax().combine(
+            reducer2=ee.Reducer.stdDev(),
+            sharedInputs=True
+        )
+
+        # Use the combined reducer to get the min max and SD of the image.
+        stats = wbpm_calc.reduceRegion(
+            reducer=reducers,
+            bestEffort=True,
+            geometry=cut_poly,
+            scale=scala,
+        )
+
+        # Display the dictionary of band means and SDs.
+        min_max_std = stats.getInfo()
+        min_max_std['min'] = min_max_std.pop('b1_min')
+        min_max_std['std'] = min_max_std.pop('b1_stdDev')
+        min_max_std['max'] = min_max_std.pop('b1_max')
+
+        print min_max_std.update(mean)
+
+        return min_max_std
 
 
     def image_visualization(self, viz_type, L1_AGBP, ETaColl3, WPbm):
 
         """Output the calculated WPbm using a map vizualizer or a chart (in this case
-        every componenet of the caluclation is plotted """
+        every componeent of the calculation is plotted """
 
         if viz_type == 'm':
 
@@ -242,7 +266,7 @@ class L1WaterProductivity(WaterProductivityCalc):
 
     def generate_tiles(self):
 
-        """INCOMPLETE  Split the calculated WPbm in72 tiles facilitating the export"""
+        """INCOMPLETE  Split the calculated WPbm in 72 tiles facilitating the export"""
 
         driver = ogr.GetDriverByName('ESRI Shapefile')
         dir_shps = "/media/sf_Fabio/Downloads/water productivity/data/tiles/tiles10_touch/tiles"
@@ -286,7 +310,7 @@ class L1WaterProductivity(WaterProductivityCalc):
     def image_export(self, exp_type, WPbm):
 
         """ INCOMPLETE Export the 72 of the calculated WPbm to Google Drive,
-        GEE Asset or generating a ulr for each tile"""
+        GEE Asset or generating a url for each tile"""
 
         driver = ogr.GetDriverByName('ESRI Shapefile')
         dir_shps = "/media/sf_Fabio/Downloads/water productivity/data/tiles/tiles10_touch/tiles"

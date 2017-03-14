@@ -103,12 +103,13 @@ def main(args=None):
 
         master = Tk()
 
-        media = elaborazione.generate_areal_stats(results.arealstat, WPbm)
-        messaggio = "Mean for {} in {} between {} and {} is {}".format(results.arealstat,
+        ritornati = elaborazione.generate_areal_stats(results.arealstat, WPbm)
+        print ritornati
+        messaggio = "Stats for {} in {} between {} and {} ".format(results.arealstat,
                                                                        'Water productivity',
                                                                        str(results.dekadal[0]),
                                                                        str(results.dekadal[1]),
-                                                                       media)
+                                                                       ritornati)
         w = Message(master, text=messaggio, width=500)
         w.pack()
 
