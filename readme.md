@@ -2,14 +2,18 @@
 ## Welcome to WaPOR’s documentation!
 
 The FAO Water Productivity Open-acces portal uses Remote sensing technologies to monitor and report on agriculture water productivity over Africa and the Near East. WaPOR. For more information on how to use the library API Documentation
-Program Parameters
+Program Parameters.
 
-usage: wpMain.py [-h] [-a Year | -d Start End Dates Start End Dates] [-c | -m]
-    [-e {u,d,a,g,n}] [-i] [-r REPLACE] [-t {agbp,eta,aet,npp}] [-s AREALSTAT] [-v]
 
-### Water Productivity using Google Earth Engine
+usage: wpMain.py [-h] **[-a Year | -d Start End Dates Start End Dates]** *[-c | -m]
+    [-e {u,d,a,g,n}] [-i] [-r REPLACE] [-t {agbp,eta,aet,npp}] [-s AREALSTAT] [-v]*
+    
+- bold = mandatory
 
-optional arguments:
+- italic = optional
+
+Arguments:
+
     -h, --help 	show this help message and exit
     -a Year, --annual Year
      	Calculate Water Productivity Annually - Year must be provided
@@ -43,4 +47,10 @@ Calculate Water Productivity betweeen 1st of January 2015 and 30th of January 20
 Calculate Water Productivity for 2015 output to a chart
 
     wpMain.py -a 2015 -c
+
+Calculate Water Productivity betweeen 1st of January 2015 and 30th of January 2015 replacing Above Ground Biomass Production with Net Primary Productivity multuplied by 1.25.
+
+No output
+
+    wpMain.py -d 2015-1-1 2015-1-30 -r 1.25
 

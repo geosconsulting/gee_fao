@@ -3,7 +3,6 @@
 """
 import argparse
 import datetime
-from Tkinter import *
 
 
 from wpCalc import L1WaterProductivity
@@ -61,7 +60,7 @@ def main(args=None):
 
     parser.add_argument('-r', '--replace', type=float,
                         help="Replace the Above Ground Biomass Production with Net Primary Productivity multiplied "
-                             "by a constant value. Sending -s 1.25 will set agbp=npp * 1.25. If not provided default "
+                             "by a constant value. Sending -r 1.25 will set agbp=npp * 1.25. If not provided default "
                              "datasets will be used instead")
 
     parser.add_argument('-t', '--timeseries',
@@ -92,7 +91,6 @@ def main(args=None):
         filtri = [moltiplicatore, results.dekadal[0], results.dekadal[1]]
         elaborazione.multiply_npp = filtri
         abpm = elaborazione.multiply_npp
-        # print illo.size().getInfo()
 
     if results.timeseries:
         elaborazione.generate_ts(results.arealstat, str(results.dekadal[0]), str(results.dekadal[1]), results.timeseries)
@@ -101,19 +99,22 @@ def main(args=None):
 
     if results.arealstat:
 
-        master = Tk()
-
+        tempo_0 = datetime.datetime.now()
         ritornati = elaborazione.generate_areal_stats(results.arealstat, WPbm)
-        print ritornati
-        messaggio = "Stats for {} in {} between {} and {} ".format(results.arealstat,
-                                                                       'Water productivity',
-                                                                       str(results.dekadal[0]),
-                                                                       str(results.dekadal[1]),
-                                                                       ritornati)
-        w = Message(master, text=messaggio, width=500)
-        w.pack()
-
-        mainloop()
+        tempo_1 = datetime.datetime.now()
+        trascorso = tempo_1-tempo_0
+        trascorso_secondi = trascorso.seconds
+        messaggio = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {} \nin {} secs".format(
+                                                                results.arealstat,
+                                                                'Water productivity',
+                                                                str(results.dekadal[0]),
+                                                                str(results.dekadal[1]),
+                                                                ritornati['std'],
+                                                                ritornati['min'],
+                                                                ritornati['max'],
+                                                                ritornati['mean'],
+                                                                trascorso_secondi)
+        print messaggio
 
     if results.map_id:
         print elaborazione.map_id_getter(WPbm)

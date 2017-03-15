@@ -220,7 +220,7 @@ class L1WaterProductivity(WaterProductivityCalc):
         min_max_std['std'] = min_max_std.pop('b1_stdDev')
         min_max_std['max'] = min_max_std.pop('b1_max')
 
-        print min_max_std.update(mean)
+        min_max_std.update(mean)
 
         return min_max_std
 
