@@ -190,12 +190,12 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         just_country = self.countries.filter(ee.Filter.eq('Country', paese))
         cut_poly = just_country.geometry()
-        scala = wbpm_calc.projection().nominalScale().getInfo()
+        raster_nominal_scale = wbpm_calc.projection().nominalScale().getInfo()
 
         country_mean = wbpm_calc.reduceRegion(
             reducer=ee.Reducer.mean(),
             geometry=cut_poly,
-            scale=scala,
+            scale=raster_nominal_scale,
             maxPixels=1e9
         )
         mean = country_mean.getInfo()
@@ -211,7 +211,7 @@ class L1WaterProductivity(WaterProductivityCalc):
             reducer=reducers,
             bestEffort=True,
             geometry=cut_poly,
-            scale=scala,
+            scale=raster_nominal_scale,
         )
 
         # Display the dictionary of band means and SDs.
@@ -269,12 +269,12 @@ class L1WaterProductivity(WaterProductivityCalc):
         """INCOMPLETE  Split the calculated WPbm in 72 tiles facilitating the export"""
 
         driver = ogr.GetDriverByName('ESRI Shapefile')
-        dir_shps = "/media/sf_Fabio/Downloads/water productivity/data/tiles/tiles10_touch/tiles"
+        dir_shps = "tiles"
         os.chdir(dir_shps)
         file_shps = glob.glob("*.shp")
 
         allExportWPbm = []
-        nomi_files = []
+        file_names = []
 
         for file_shp in file_shps:
 
@@ -285,18 +285,18 @@ class L1WaterProductivity(WaterProductivityCalc):
             else:
                 layer = dataSource.GetLayer(0)
                 extent = layer.GetExtent()
-                nome_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
-                nomi_files.append(nome_file)
-                primo = extent[0], extent[3]
-                secondo = extent[0], extent[2]
-                terzo = extent[1], extent[2]
-                quarto = extent[1], extent[3]
+                active_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
+                file_names.append(active_file)
+                low_sx = extent[0], extent[3]
+                up_sx = extent[0], extent[2]
+                up_dx = extent[1], extent[2]
+                low_dx = extent[1], extent[3]
 
-                cut = []
-                cut.append(list(primo))
-                cut.append(list(secondo))
-                cut.append(list(terzo))
-                cut.append(list(quarto))
+                cut = [list(low_sx), list(up_sx), list(up_dx), list(low_dx)]
+                #cut.append(list(low_sx))
+                #cut.append(list(up_sx))
+                #cut.append(list(up_dx))
+                #cut.append(list(low_dx))
 
                 Export_WPbm = {
                     "crs": "EPSG:4326",
@@ -304,8 +304,7 @@ class L1WaterProductivity(WaterProductivityCalc):
                     'region': cut}
                 allExportWPbm.append(Export_WPbm)
 
-        return allExportWPbm, nomi_files
-
+        return allExportWPbm, file_names
 
     def image_export(self, exp_type, WPbm):
 
@@ -313,28 +312,29 @@ class L1WaterProductivity(WaterProductivityCalc):
         GEE Asset or generating a url for each tile"""
 
         driver = ogr.GetDriverByName('ESRI Shapefile')
-        dir_shps = "/media/sf_Fabio/Downloads/water productivity/data/tiles/tiles10_touch/tiles"
+        dir_shps = "tiles"
         os.chdir(dir_shps)
-        file_shps = glob.glob("*.shp")
+        list_shps = glob.glob("*.shp")
 
-        for file_shp in file_shps:
+        for file_shp in list_shps:
             dataSource = driver.Open(file_shp, 0)
             if dataSource is None:
                 sys.exit(('Could not open {0}.'.format(file_shp)))
             else:
                 layer = dataSource.GetLayer(0)
                 extent = layer.GetExtent()
-                nome_file = str(file_shp.split('.')[0])
-                primo = extent[0], extent[3]
-                secondo = extent[0], extent[2]
-                terzo = extent[1], extent[2]
-                quarto = extent[1], extent[3]
+                active_file = str(file_shp.split('.')[0])
+                low_sx = extent[0], extent[3]
+                up_sx = extent[0], extent[2]
+                up_dx = extent[1], extent[2]
+                low_dx = extent[1], extent[3]
 
                 cut = []
-                cut.append(list(primo))
-                cut.append(list(secondo))
-                cut.append(list(terzo))
-                cut.append(list(quarto))
+                cut = [list(low_sx), list(up_sx), list(up_dx), list(low_dx)]
+                # cut.append(list(low_sx))
+                # cut.append(list(up_sx))
+                # cut.append(list(up_dx))
+                # cut.append(list(low_dx))
 
                 Export_WPbm = {
                     "crs": "EPSG:4326",
@@ -342,16 +342,16 @@ class L1WaterProductivity(WaterProductivityCalc):
                     'region': cut}
 
                 if exp_type == 'u':
-                    lista_url = []
+                    list_of_downloading_urls = []
                     try:
                         url_WPbm = WPbm.getDownloadUrl(Export_WPbm)
-                        lista_url.append(url_WPbm)
+                        list_of_downloading_urls.append(url_WPbm)
                     except:
                         print("Unexpected error:", sys.exc_info()[0])
                         raise
                 elif exp_type == 'd':
                     task = ee.batch.Export.image(WPbm,
-                                                 nome_file,
+                                                 active_file,
                                                  Export_WPbm)
                     task.start()
                     while task.status()['state'] == 'RUNNING':
@@ -361,11 +361,11 @@ class L1WaterProductivity(WaterProductivityCalc):
                     print 'Done.', task.status()
 
                 elif exp_type == 'a':
-                    nome_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
-                    asset_temp = "projects/fao-wapor/testExpPython/JanMar2015/" + nome_file
+                    active_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
+                    asset_temp = "projects/fao-wapor/testExpPython/JanMar2015/" + active_file
                     ee.batch.Export.image.toAsset(
                         image=WPbm,
-                        description=nome_file,
+                        description=active_file,
                         assetId=asset_temp,
                         crs="EPSG:4326",
                         scale= 250,
@@ -373,9 +373,9 @@ class L1WaterProductivity(WaterProductivityCalc):
                         ).start()
 
                 elif exp_type == 'g':
-                    nome_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
-                    asset_temp = "projects/fao-wapor/testExpPython/" + nome_file
-                    print nome_file,asset_temp
+                    active_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
+                    asset_temp = "projects/fao-wapor/testExpPython/" + active_file
+                    print active_file,asset_temp
                 elif exp_type == 'n':
                     print("Nothing yet")
                     pass

@@ -77,56 +77,57 @@ def main(args=None):
 
     results = parser.parse_args()
 
-    elaborazione = L1WaterProductivity()
+    analysis_level_1 = L1WaterProductivity()
 
     if results.annual:
-        abpm, aet = elaborazione.image_selection
+        abpm, aet = analysis_level_1.image_selection
     elif results.dekadal:
         date_v = [results.dekadal[0], results.dekadal[1]]
-        elaborazione.image_selection = date_v
-        abpm, aet = elaborazione.image_selection
+        analysis_level_1.image_selection = date_v
+        abpm, aet = analysis_level_1.image_selection
 
     if results.replace:
         moltiplicatore = results.replace
         filtri = [moltiplicatore, results.dekadal[0], results.dekadal[1]]
-        elaborazione.multiply_npp = filtri
-        abpm = elaborazione.multiply_npp
+        analysis_level_1.multiply_npp = filtri
+        abpm = analysis_level_1.multiply_npp
 
     if results.timeseries:
-        elaborazione.generate_ts(results.arealstat, str(results.dekadal[0]), str(results.dekadal[1]), results.timeseries)
+        analysis_level_1.generate_ts(results.arealstat, str(results.dekadal[0]), str(results.dekadal[1]), results.timeseries)
 
-    L1_AGBP_summed, ETaColl1, ETaColl2, ETaColl3, WPbm = elaborazione.image_processing(abpm, aet)
+    L1_AGBP_summed, ETaColl1, ETaColl2, ETaColl3, WPbm = analysis_level_1.image_processing(abpm, aet)
 
     if results.arealstat:
 
-        tempo_0 = datetime.datetime.now()
-        ritornati = elaborazione.generate_areal_stats(results.arealstat, WPbm)
-        tempo_1 = datetime.datetime.now()
-        trascorso = tempo_1-tempo_0
-        trascorso_secondi = trascorso.seconds
-        messaggio = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {} \nin {} secs".format(
+        time_0 = datetime.datetime.now()
+        country_stats = analysis_level_1.generate_areal_stats(results.arealstat, WPbm)
+        time_1 = datetime.datetime.now()
+        time_activity = time_1-time_0
+        time_activity_seconds = time_activity.seconds
+
+        print_message = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {} \nin {} secs".format(
                                                                 results.arealstat,
                                                                 'Water productivity',
                                                                 str(results.dekadal[0]),
                                                                 str(results.dekadal[1]),
-                                                                ritornati['std'],
-                                                                ritornati['min'],
-                                                                ritornati['max'],
-                                                                ritornati['mean'],
-                                                                trascorso_secondi)
-        print messaggio
+                                                                country_stats['std'],
+                                                                country_stats['min'],
+                                                                country_stats['max'],
+                                                                country_stats['mean'],
+                                                                time_activity_seconds)
+        print print_message
 
     if results.map_id:
-        print elaborazione.map_id_getter(WPbm)
+        print analysis_level_1.map_id_getter(WPbm)
 
     if results.chart:
-        elaborazione.image_visualization('c', L1_AGBP_summed, ETaColl3, WPbm)
+        analysis_level_1.image_visualization('c', L1_AGBP_summed, ETaColl3, WPbm)
     elif results.map:
-        elaborazione.image_visualization('m', L1_AGBP_summed, ETaColl3, WPbm)
+        analysis_level_1.image_visualization('m', L1_AGBP_summed, ETaColl3, WPbm)
     else:
         pass
 
-    elaborazione.image_export(results.export, WPbm)
+    analysis_level_1.image_export(results.export, WPbm)
 
 if __name__ == '__main__':
     main()
