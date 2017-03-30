@@ -1,3 +1,4 @@
+#! /usr/bin/env python
 """
     Main class for activating different calculations available in wpCalc.py via argparse
 """
@@ -69,7 +70,16 @@ def main(args=None):
                         default=None)
 
     parser.add_argument('-s', '--arealstat',
-                        help="Zonal statistics form a WaterProductivity layer generated on the fly in GEE for the chosen country")
+                        help="Zonal statistics form a WaterProductivity layer generated on the fly "
+                             "in GEE for the chosen country")
+
+    parser.add_argument('-w', '--annualstat',
+                        required=True,
+                        help="Zonal statistics from an annual Water Productivity layer for all countries")
+
+    parser.add_argument('-o', '--output',
+                        choices=['csv', 'json'],
+                        help="Choose format fo the annual statistics csv(-o 'csv') or json (-o 'json')")
 
     parser.add_argument("-v", "--verbose",
                         help="Increase output verbosity",
@@ -80,6 +90,16 @@ def main(args=None):
     analysis_level_1 = L1WaterProductivity()
 
     if results.annual:
+        print results.annual
+        # date_start = datetime.datetime.strptime(str(results.annual) + '-01-01', '%Y-%m-%d') #.strftime('%s')+'000'
+        # date_end = datetime.datetime.strptime(str(results.annual+1) + '-01-01', '%Y-%m-%d') #.strftime('%s')+'000'
+        date_start = str(results.annual) + '-01-01'
+        date_end = str(results.annual+1) + '-01-01'
+        print date_start
+        print date_end
+        date_v = [date_start, date_end]
+        print date_v
+        analysis_level_1.image_selection = date_v
         abpm, aet = analysis_level_1.image_selection
     elif results.dekadal:
         date_v = [results.dekadal[0], results.dekadal[1]]
@@ -98,14 +118,9 @@ def main(args=None):
     L1_AGBP_summed, ETaColl1, ETaColl2, ETaColl3, WPbm = analysis_level_1.image_processing(abpm, aet)
 
     if results.arealstat:
-
-        time_0 = datetime.datetime.now()
-        country_stats = analysis_level_1.generate_areal_stats(results.arealstat, WPbm)
-        time_1 = datetime.datetime.now()
-        time_activity = time_1-time_0
-        time_activity_seconds = time_activity.seconds
-
-        print_message = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {} \nin {} secs".format(
+        country_stats = analysis_level_1.generate_areal_stats_dekad_country(results.arealstat, WPbm)
+        if country_stats != 'no country':
+            print_message = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {}".format(
                                                                 results.arealstat,
                                                                 'Water productivity',
                                                                 str(results.dekadal[0]),
@@ -113,9 +128,16 @@ def main(args=None):
                                                                 country_stats['std'],
                                                                 country_stats['min'],
                                                                 country_stats['max'],
-                                                                country_stats['mean'],
-                                                                time_activity_seconds)
-        print print_message
+                                                                country_stats['mean'])
+            print print_message
+        else:
+            print "no country in db"
+
+    if results.annualstat:
+
+        print results.output
+        countries_stats = analysis_level_1.generate_areal_stats_annual_allcountries(2015, results.output)
+        print countries_stats
 
     if results.map_id:
         print analysis_level_1.map_id_getter(WPbm)

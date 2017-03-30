@@ -20,6 +20,7 @@ import os
 import glob
 import datetime
 import seaborn
+import pandas as pd
 
 class WaterProductivityCalc(object):
 
@@ -38,8 +39,14 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         self._REGION = [[-25.0, -37.0], [60.0, -41.0], [58.0, 39.0], [-31.0, 38.0],  [-25.0, -37.0]]
 
-        self.countries = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
+        # AREA OF INTEREST
+        # region = [[-25.0, -40.0], [65.0, -40.0], [65.0, 40.0], [-30.0, 40.0], [-30.0, -40.0]]
+
+        #self.countries = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
+        self.countries = ee.FeatureCollection('ft:1ZDEMjtnWm_smu7l_z3fx91BbxyCRzP2A3cEMrEiP')
         self.wsheds = ee.FeatureCollection('ft:1IXfrLpTHX4dtdj1LcNXjJADBB-d93rkdJ9acSEWK')
+
+        self._L1_WP_ANNUAL = ee.Image("projects/fao-wapor/L1-WPbmY2015-sample")
 
         self._L1_AGBP_SEASONAL = ee.ImageCollection("projects/fao-wapor/L1_AGBP")
         self._L1_AGBP_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_AGBP250")
@@ -85,7 +92,6 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         self.l1_NPP250_calc = coll_npp_multiplied
 
-
     @property
     def image_selection(self):
         """ Returns both datasets to be used for WPbm"""
@@ -106,6 +112,8 @@ class L1WaterProductivity(WaterProductivityCalc):
         collection_aet_filtered = self._L1_AET250.filterDate(
             data_start,
             data_end)
+
+        print collection_agbp_filtered.size().getInfo(), collection_aet_filtered.size().getInfo()
 
         self.l1_AGBP_calc = collection_agbp_filtered
         self.l1_AET250_calc = collection_aet_filtered
@@ -184,46 +192,90 @@ class L1WaterProductivity(WaterProductivityCalc):
         plt.xticks(range(len(labels_agbp)), lables_data, rotation=60)
         plt.show()
 
-    def generate_areal_stats(self, paese, wbpm_calc):
 
-        """Calculates several statistics for the Water Productivity calculated raster for a chosen country"""
+    def generate_areal_stats_annual_allcountries(self, year, ser='no output'):
 
-        just_country = self.countries.filter(ee.Filter.eq('Country', paese))
-        cut_poly = just_country.geometry()
-        raster_nominal_scale = wbpm_calc.projection().nominalScale().getInfo()
+        """Calculates several statistics for the Water Productivity pre-calculated 
+            raster for all africa countries and the requested year"""
 
-        country_mean = wbpm_calc.reduceRegion(
+        africa_bbox = ee.Geometry.Rectangle(-15.64, -33.58, 59.06, 25.96)
+        filtered = self.countries.filterBounds(africa_bbox)
+
+        means = self._L1_WP_ANNUAL.reduceRegions(
+            collection=filtered,
             reducer=ee.Reducer.mean(),
-            geometry=cut_poly,
-            scale=raster_nominal_scale,
-            maxPixels=1e9
+            scale=250,
         )
-        mean = country_mean.getInfo()
-        mean['mean'] = mean.pop('b1')
 
         reducers = ee.Reducer.minMax().combine(
             reducer2=ee.Reducer.stdDev(),
             sharedInputs=True
         )
 
-        # Use the combined reducer to get the min max and SD of the image.
-        stats = wbpm_calc.reduceRegion(
+        minMaxStds = self._L1_WP_ANNUAL.reduceRegions(
+            collection=filtered,
             reducer=reducers,
-            bestEffort=True,
-            geometry=cut_poly,
-            scale=raster_nominal_scale,
-        )
+            scale=250)
 
-        # Display the dictionary of band means and SDs.
-        min_max_std = stats.getInfo()
-        min_max_std['min'] = min_max_std.pop('b1_min')
-        min_max_std['std'] = min_max_std.pop('b1_stdDev')
-        min_max_std['max'] = min_max_std.pop('b1_max')
+        features_m = means.getInfo()['features']
+        features_mms = minMaxStds.getInfo()['features']
 
-        min_max_std.update(mean)
+        df_m = pd.DataFrame(data=features_m[1:], columns=features_m[0])
+        df_mms = pd.DataFrame(data=features_mms[1:], columns=features_mms[0])
 
-        return min_max_std
+        serie_m = df_m['properties'].apply(pd.Series)
+        serie_mms = df_mms['properties'].apply(pd.Series)
 
+        df_m = pd.DataFrame(serie_m[['fid', 'gaul_code', 'iso3', 'mean', 'name', 'region', 'subregion']])
+        df_mms = pd.DataFrame(serie_mms[['iso3', 'min', 'max', 'stdDev']])
+
+        df_stats = df_m.join(df_mms, lsuffix='_df_m', rsuffix='_df_mms')
+
+        df_stats.to_csv(str(year) + '.csv')
+        df_stats.to_json(str(year) + '.json')
+
+        return df_stats
+
+
+    def generate_areal_stats_dekad_country(self, chosen_country, wbpm_calc):
+
+        """Calculates several statistics for the Water Productivity calculated raster for a chosen country"""
+        just_country = self.countries.filter(ee.Filter.eq('name', chosen_country))
+        if just_country.size().getInfo() > 0:
+            cut_poly = just_country.geometry()
+            raster_nominal_scale = wbpm_calc.projection().nominalScale().getInfo()
+
+            country_mean = wbpm_calc.reduceRegion(
+                reducer=ee.Reducer.mean(),
+                geometry=cut_poly,
+                scale=raster_nominal_scale,
+                maxPixels=1e9
+            )
+            mean = country_mean.getInfo()
+            mean['mean'] = mean.pop('b1')
+
+            reducers = ee.Reducer.minMax().combine(
+                reducer2=ee.Reducer.stdDev(),
+                sharedInputs=True
+            )
+
+            # Use the combined reducer to get the min max and SD of the image.
+            stats = wbpm_calc.reduceRegion(
+                reducer=reducers,
+                bestEffort=True,
+                geometry=cut_poly,
+                scale=raster_nominal_scale,
+            )
+
+            # Display the dictionary of band means and SDs.
+            min_max_std = stats.getInfo()
+            min_max_std['min'] = min_max_std.pop('b1_min')
+            min_max_std['std'] = min_max_std.pop('b1_stdDev')
+            min_max_std['max'] = min_max_std.pop('b1_max')
+            min_max_std.update(mean)
+            return min_max_std
+        else:
+            return 'no country'
 
     def image_visualization(self, viz_type, L1_AGBP, ETaColl3, WPbm):
 
@@ -266,7 +318,7 @@ class L1WaterProductivity(WaterProductivityCalc):
 
     def generate_tiles(self):
 
-        """INCOMPLETE  Split the calculated WPbm in 72 tiles facilitating the export"""
+        """INCOMPLETE  Split the calculated WPbm in 100 tiles facilitating the export"""
 
         driver = ogr.GetDriverByName('ESRI Shapefile')
         dir_shps = "tiles"
