@@ -21,6 +21,7 @@ import glob
 import datetime
 import seaborn
 import pandas as pd
+import logging
 
 class WaterProductivityCalc(object):
 
@@ -37,64 +38,70 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         ee.Initialize()
 
+        self.L1_logger = logging.getLogger("wpWin.wpCalc")
+
         self._REGION = [[-25.0, -37.0], [60.0, -41.0], [58.0, 39.0], [-31.0, 38.0],  [-25.0, -37.0]]
 
-        # AREA OF INTEREST
+        # AREA OF INTEREST ALTERNATIVE
         # region = [[-25.0, -40.0], [65.0, -40.0], [65.0, 40.0], [-30.0, 40.0], [-30.0, -40.0]]
 
+        # OLD COUNTRIES KEEP FOR CHECKING NAMES
         #self.countries = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
+
         self.countries = ee.FeatureCollection('ft:1ZDEMjtnWm_smu7l_z3fx91BbxyCRzP2A3cEMrEiP')
         self.wsheds = ee.FeatureCollection('ft:1IXfrLpTHX4dtdj1LcNXjJADBB-d93rkdJ9acSEWK')
 
         self._L1_WP_ANNUAL = ee.Image("projects/fao-wapor/L1-WPbmY2015-sample")
 
+        # OLD ABOVE GROUND BIOMASS PRODUCTION DISCONTINUED BUT KEPT FOR LEGACY
         self._L1_AGBP_SEASONAL = ee.ImageCollection("projects/fao-wapor/L1_AGBP")
         self._L1_AGBP_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_AGBP250")
+
+        self._L1_NPP_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_NPP")
         self._L1_ETa_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_AET")
+        self._L1_RET_DAILY = ee.ImageCollection("projects/fao-wapor/L1_RET")
+
         self._L1_AET250 = ee.ImageCollection("users/lpeiserfao/AET250")
-        self._L1_NPP_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_NPP250")
 
         self.l1_AGBP_calc = self._L1_AGBP_SEASONAL
         self.l1_AET250_calc = self._L1_AET250
         self.l1_NPP250_calc = self._L1_NPP_DEKADAL
 
-        self.VisPar_AGBPy = {"opacity": 0.85, "bands": "b1",
-                             "min": 0, "max": 12000,
-                             "palette": "f4ffd9,c8ef7e,87b332,566e1b",
-                             "region": self._REGION}
+        self.VisPar_AGBPy = {"opacity": 0.85, "bands": "b1", "min": 0, "max": 12000,
+                             "palette": "f4ffd9,c8ef7e,87b332,566e1b", "region": self._REGION}
 
-        self.VisPar_ETay = {"opacity": 1, "bands": "b1",
-                            "min": 0, "max": 2000,
-                            "palette": "d4ffc6,beffed,79c1ff,3e539f",
-                            "region": self._REGION}
+        self.VisPar_ETay = {"opacity": 1, "bands": "b1", "min": 0, "max": 2000,
+                            "palette": "d4ffc6,beffed,79c1ff,3e539f", "region": self._REGION}
 
-        self.VisPar_WPbm = {"opacity": 0.85, "bands": "b1",
-                            "min": 0, "max": 1.2,
-                            "palette": "bc170f,e97a1a,fff83a,9bff40,5cb326",
-                            "region": self._REGION}
+        self.VisPar_WPbm = {"opacity": 0.85, "bands": "b1", "min": 0, "max": 1.2,
+                            "palette": "bc170f,e97a1a,fff83a,9bff40,5cb326", "region": self._REGION}
 
     @property
     def multiply_npp(self):
+
         """ Returns the dataset to be used in conjunction with Actual Evapotranspiration for WPbm"""
         return self.l1_NPP250_calc
 
     @multiply_npp.setter
-    def multiply_npp(self, valori_filtro):
+    def multiply_npp(self, filtering_values):
+
         """ Sets the dataset to be used in conjunction with Actual Evapotranspiration for WPbm"""
 
-        data_start = str(valori_filtro[1])
-        data_end = str(valori_filtro[2])
+        data_start = str(filtering_values[1])
+        data_end = str(filtering_values[2])
 
         coll_npp_filtered = self._L1_NPP_DEKADAL.filterDate(
             data_start,
             data_end)
-        coll_npp_multiplied = coll_npp_filtered.map(lambda immagini: immagini.multiply(valori_filtro[0]))
+        coll_npp_multiplied = coll_npp_filtered.map(lambda npp_images: npp_images.multiply(filtering_values[0]))
 
         self.l1_NPP250_calc = coll_npp_multiplied
 
     @property
     def image_selection(self):
+
         """ Returns both datasets to be used for WPbm"""
+
         return self.l1_AGBP_calc, self.l1_AET250_calc
 
     @image_selection.setter
@@ -113,7 +120,11 @@ class L1WaterProductivity(WaterProductivityCalc):
             data_start,
             data_end)
 
-        print collection_agbp_filtered.size().getInfo(), collection_aet_filtered.size().getInfo()
+        agbp_num = collection_agbp_filtered.size().getInfo()
+        self.L1_logger.debug("AGBP selected %d" % agbp_num)
+
+        aet_num = collection_aet_filtered.size().getInfo()
+        self.L1_logger.debug("AET selected %d" % aet_num)
 
         self.l1_AGBP_calc = collection_agbp_filtered
         self.l1_AET250_calc = collection_aet_filtered
@@ -399,7 +410,7 @@ class L1WaterProductivity(WaterProductivityCalc):
                         url_WPbm = WPbm.getDownloadUrl(Export_WPbm)
                         list_of_downloading_urls.append(url_WPbm)
                     except:
-                        print("Unexpected error:", sys.exc_info()[0])
+                        self.L1_logger.error("Unexpected error:", sys.exc_info()[0])
                         raise
                 elif exp_type == 'd':
                     task = ee.batch.Export.image(WPbm,
@@ -407,10 +418,9 @@ class L1WaterProductivity(WaterProductivityCalc):
                                                  Export_WPbm)
                     task.start()
                     while task.status()['state'] == 'RUNNING':
-                        print 'Running'
                         # Perhaps task.cancel() at some point.
                         time.sleep(1)
-                    print 'Done.', task.status()
+                    self.L1_logger.info('Done.', task.status())
 
                 elif exp_type == 'a':
                     active_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
@@ -427,7 +437,7 @@ class L1WaterProductivity(WaterProductivityCalc):
                 elif exp_type == 'g':
                     active_file = "tile_" + str(file_shp.split('.')[0]).split("_")[3]
                     asset_temp = "projects/fao-wapor/testExpPython/" + active_file
-                    print active_file,asset_temp
+                    self.L1_logger.info(active_file, asset_temp)
                 elif exp_type == 'n':
                     print("Nothing yet")
                     pass

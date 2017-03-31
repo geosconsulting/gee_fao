@@ -4,7 +4,7 @@
 """
 import argparse
 import datetime
-
+import logging
 
 from wpCalc import L1WaterProductivity
 
@@ -16,8 +16,22 @@ def valid_date(s):
         msg = "Not a valid date: '{0}'.".format(s)
         raise argparse.ArgumentTypeError(msg)
 
-
 def main(args=None):
+
+    logger = logging.getLogger("wpWin")
+    logger.setLevel(level=logging.DEBUG)
+
+    formatter = logging.Formatter("%(levelname) -4s %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s")
+
+    fh = logging.FileHandler('wapor.log')
+    fh.setLevel(logging.ERROR)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
     groupTimePeriod = parser.add_mutually_exclusive_group()
@@ -74,7 +88,7 @@ def main(args=None):
                              "in GEE for the chosen country")
 
     parser.add_argument('-w', '--annualstat',
-                        required=True,
+                        required=False,
                         help="Zonal statistics from an annual Water Productivity layer for all countries")
 
     parser.add_argument('-o', '--output',
@@ -90,15 +104,10 @@ def main(args=None):
     analysis_level_1 = L1WaterProductivity()
 
     if results.annual:
-        print results.annual
-        # date_start = datetime.datetime.strptime(str(results.annual) + '-01-01', '%Y-%m-%d') #.strftime('%s')+'000'
-        # date_end = datetime.datetime.strptime(str(results.annual+1) + '-01-01', '%Y-%m-%d') #.strftime('%s')+'000'
         date_start = str(results.annual) + '-01-01'
-        date_end = str(results.annual+1) + '-01-01'
-        print date_start
-        print date_end
+        date_end = str(results.annual + 1) + '-01-01'
         date_v = [date_start, date_end]
-        print date_v
+        logger.debug(date_v)
         analysis_level_1.image_selection = date_v
         abpm, aet = analysis_level_1.image_selection
     elif results.dekadal:
@@ -107,8 +116,8 @@ def main(args=None):
         abpm, aet = analysis_level_1.image_selection
 
     if results.replace:
-        moltiplicatore = results.replace
-        filtri = [moltiplicatore, results.dekadal[0], results.dekadal[1]]
+        multiplier = results.replace
+        filtri = [multiplier, results.dekadal[0], results.dekadal[1]]
         analysis_level_1.multiply_npp = filtri
         abpm = analysis_level_1.multiply_npp
 
@@ -131,12 +140,13 @@ def main(args=None):
                                                                 country_stats['mean'])
             print print_message
         else:
-            print "no country in db"
+            logger.debug("Country Error")
+            logger.error("No country named {} in db".format(results.arealstat))
 
     if results.annualstat:
 
-        print results.output
         countries_stats = analysis_level_1.generate_areal_stats_annual_allcountries(2015, results.output)
+        # Print zonal statistics fro alla African COuntries
         print countries_stats
 
     if results.map_id:
