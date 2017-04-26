@@ -1,9 +1,10 @@
+#! /usr/bin/env python
 """
     Main class for activating different calculations available in wpCalc.py via argparse
 """
 import argparse
 import datetime
-
+import logging
 
 from wpCalc import L1WaterProductivity
 
@@ -15,8 +16,22 @@ def valid_date(s):
         msg = "Not a valid date: '{0}'.".format(s)
         raise argparse.ArgumentTypeError(msg)
 
-
 def main(args=None):
+
+    logger = logging.getLogger("wpWin")
+    logger.setLevel(level=logging.DEBUG)
+
+    formatter = logging.Formatter("%(levelname) -4s %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s")
+
+    fh = logging.FileHandler('wapor.log')
+    fh.setLevel(logging.ERROR)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
     groupTimePeriod = parser.add_mutually_exclusive_group()
@@ -58,10 +73,10 @@ def main(args=None):
                         help="Generate map id for generating tiles",
                         action="store_true")
 
-    parser.add_argument('-r', '--replace', type=float,
-                        help="Replace the Above Ground Biomass Production with Net Primary Productivity multiplied "
-                             "by a constant value. Sending -r 1.25 will set agbp=npp * 1.25. If not provided default "
-                             "datasets will be used instead")
+    #parser.add_argument('-r', '--replace', type=float,
+    #                    help="Replace the Above Ground Biomass Production with Net Primary Productivity multiplied "
+    #                         "by a constant value. Sending -r 1.25 will set agbp=npp * 1.25. If not provided default "
+    #                         "datasets will be used instead")
 
     parser.add_argument('-t', '--timeseries',
                         choices=['agbp', 'eta', 'aet', 'npp'],
@@ -69,7 +84,16 @@ def main(args=None):
                         default=None)
 
     parser.add_argument('-s', '--arealstat',
-                        help="Zonal statistics form a WaterProductivity layer generated on the fly in GEE for the chosen country")
+                        help="Zonal statistics form a WaterProductivity layer generated on the fly "
+                             "in GEE for the chosen country")
+
+    parser.add_argument('-w', '--annualstat',
+                        required=False,
+                        help="Zonal statistics from an annual Water Productivity layer for all countries")
+
+    parser.add_argument('-o', '--output',
+                        choices=['csv', 'json'],
+                        help="Choose format fo the annual statistics csv(-o 'csv') or json (-o 'json')")
 
     parser.add_argument("-v", "--verbose",
                         help="Increase output verbosity",
@@ -77,56 +101,68 @@ def main(args=None):
 
     results = parser.parse_args()
 
-    elaborazione = L1WaterProductivity()
+    analysis_level_1 = L1WaterProductivity()
 
     if results.annual:
-        abpm, aet = elaborazione.image_selection
+        date_start = str(results.annual) + '-01-01'
+        date_end = str(results.annual + 1) + '-01-01'
+        date_v = [date_start, date_end]
+        logger.debug(date_v)
+        analysis_level_1.image_selection = date_v
+        abpm, aet = analysis_level_1.image_selection
     elif results.dekadal:
         date_v = [results.dekadal[0], results.dekadal[1]]
-        elaborazione.image_selection = date_v
-        abpm, aet = elaborazione.image_selection
+        logger.debug(date_v)
+        analysis_level_1.image_selection = date_v
+        abpm, aet = analysis_level_1.image_selection
 
-    if results.replace:
-        moltiplicatore = results.replace
-        filtri = [moltiplicatore, results.dekadal[0], results.dekadal[1]]
-        elaborazione.multiply_npp = filtri
-        abpm = elaborazione.multiply_npp
+    # if results.replace:
+    #     multiplier = results.replace
+    #     filtri = [multiplier, results.dekadal[0], results.dekadal[1]]
+    #     analysis_level_1.multiply_npp = filtri
+    #     abpm = analysis_level_1.multiply_npp
 
     if results.timeseries:
-        elaborazione.generate_ts(results.arealstat, str(results.dekadal[0]), str(results.dekadal[1]), results.timeseries)
+        analysis_level_1.generate_ts(results.arealstat, str(results.dekadal[0]), str(results.dekadal[1]), results.timeseries)
 
-    L1_AGBP_summed, ETaColl1, ETaColl2, ETaColl3, WPbm = elaborazione.image_processing(abpm, aet)
+    #L1_AGBP_summed, ETaColl1, ETaColl2, ETaColl3, WPbm = analysis_level_1.image_processing(abpm, aet)
+
+    # Removed ETaColl1 because masking is not necassary rasters have been masked in uploading
+    L1_AGBP_summed, ETaColl2, ETaColl3, WPbm = analysis_level_1.image_processing(abpm, aet)
 
     if results.arealstat:
-
-        tempo_0 = datetime.datetime.now()
-        ritornati = elaborazione.generate_areal_stats(results.arealstat, WPbm)
-        tempo_1 = datetime.datetime.now()
-        trascorso = tempo_1-tempo_0
-        trascorso_secondi = trascorso.seconds
-        messaggio = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {} \nin {} secs".format(
+        country_stats = analysis_level_1.generate_areal_stats_dekad_country(results.arealstat, WPbm)
+        if country_stats != 'no country':
+            print_message = "Stats for {} in {} between {} and {} \nSTDev {} \nMIN {} \nMAX {} \nMEAN {}".format(
                                                                 results.arealstat,
                                                                 'Water productivity',
                                                                 str(results.dekadal[0]),
                                                                 str(results.dekadal[1]),
-                                                                ritornati['std'],
-                                                                ritornati['min'],
-                                                                ritornati['max'],
-                                                                ritornati['mean'],
-                                                                trascorso_secondi)
-        print messaggio
+                                                                country_stats['std'],
+                                                                country_stats['min'],
+                                                                country_stats['max'],
+                                                                country_stats['mean'])
+            print print_message
+        else:
+            logger.debug("Country Error")
+            logger.error("No country named {} in db".format(results.arealstat))
+
+    if results.annualstat:
+        countries_stats = analysis_level_1.generate_areal_stats_annual_allcountries(results.annualstat, results.output)
+        # Print zonal statistics fro alla African COuntries
+        print countries_stats
 
     if results.map_id:
-        print elaborazione.map_id_getter(WPbm)
+        print analysis_level_1.map_id_getter(WPbm)
 
     if results.chart:
-        elaborazione.image_visualization('c', L1_AGBP_summed, ETaColl3, WPbm)
+        analysis_level_1.image_visualization('c', L1_AGBP_summed, ETaColl3, WPbm)
     elif results.map:
-        elaborazione.image_visualization('m', L1_AGBP_summed, ETaColl3, WPbm)
+        analysis_level_1.image_visualization('m', L1_AGBP_summed, ETaColl3, WPbm)
     else:
         pass
 
-    elaborazione.image_export(results.export, WPbm)
+    analysis_level_1.image_export(results.export, WPbm)
 
 if __name__ == '__main__':
     main()
