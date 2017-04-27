@@ -28,7 +28,9 @@ from osgeo import ogr
 class WaterProductivityCalc(object):
 
     def __init__(self):
-        pass
+        _REGION = [[-25.0, -37.0], [60.0, -41.0], [58.0, 39.0], [-31.0, 38.0], [-25.0, -37.0]]
+        _COUNTRIES = ee.FeatureCollection('ft:1ZDEMjtnWm_smu7l_z3fx91BbxyCRzP2A3cEMrEiP')
+        _WSHEDS = ee.FeatureCollection('ft:1IXfrLpTHX4dtdj1LcNXjJADBB-d93rkdJ9acSEWK')
 
 class L1WaterProductivity(WaterProductivityCalc):
 
@@ -42,64 +44,29 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         self.L1_logger = logging.getLogger("wpWin.wpCalc")
 
-        self._REGION = [[-25.0, -37.0], [60.0, -41.0], [58.0, 39.0], [-31.0, 38.0],  [-25.0, -37.0]]
-
-        # AREA OF INTEREST ALTERNATIVE
-        # region = [[-25.0, -40.0], [65.0, -40.0], [65.0, 40.0], [-30.0, 40.0], [-30.0, -40.0]]
-
-        # OLD COUNTRIES KEEP FOR CHECKING NAMES
-        # self.countries = ee.FeatureCollection('ft:1tdSwUL7MVpOauSgRzqVTOwdfy17KDbw-1d9omPw')
-
-        self.countries = ee.FeatureCollection('ft:1ZDEMjtnWm_smu7l_z3fx91BbxyCRzP2A3cEMrEiP')
-        self.wsheds = ee.FeatureCollection('ft:1IXfrLpTHX4dtdj1LcNXjJADBB-d93rkdJ9acSEWK')
-
-        self._L1_WP_ANNUAL = ee.Image("projects/fao-wapor/L1-WPbmY2015-sample")
-
-        # OLD ABOVE GROUND BIOMASS PRODUCTION DISCONTINUED BUT KEPT FOR LEGACY
-        # self._L1_AGBP_SEASONAL = ee.ImageCollection("projects/fao-wapor/L1_AGBP")
-        # self._L1_AGBP_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_AGBP250")
-
         self._L1_NPP_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_NPP")
-        self._L1_ETa_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_AET")
+        self._L1_AET_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_AET")
+        self._L1_TFRAC_DEKADAL = ee.ImageCollection("projects/fao-wapor/L1_TFRAC")
         self._L1_RET_DAILY = ee.ImageCollection("projects/fao-wapor/L1_RET")
+        self._L1_PCP_DAILY = ee.ImageCollection("projects/fao-wapor/L1_PCP")
 
-        #self._L1_AET250 = ee.ImageCollection("users/lpeiserfao/AET250")
-
-        # self.L1_AGBP_calc = self._L1_AGBP_SEASONAL
-        self.L1_AET_calc = self._L1_ETa_DEKADAL
+        self.L1_AET_calc = self._L1_AET_DEKADAL
         self.L1_AGBP_calc = self._L1_NPP_DEKADAL
 
         self.VisPar_AGBPy = {"opacity": 0.85, "bands": "b1", "min": 0, "max": 850,
-                             "palette": "f4ffd9,c8ef7e,87b332,566e1b", "region": self._REGION}
+                             "palette": "f4ffd9,c8ef7e,87b332,566e1b", "region": WaterProductivityCalc._REGION}
+        
 
         self.VisPar_ETay = {"opacity": 1, "bands": "b1", "min": 0, "max": 2000,
-                            "palette": "d4ffc6,beffed,79c1ff,3e539f", "region": self._REGION}
+                            "palette": "d4ffc6,beffed,79c1ff,3e539f", "region": WaterProductivityCalc._REGION}
 
-        self.VisPar_WPbm = {"opacity": 0.85, "bands": "b1", "min": 0, "max": 1.2,
-                            "palette": "bc170f,e97a1a,fff83a,9bff40,5cb326", "region": self._REGION}
-
-    @property
-    def multiply_npp(self, filtering_values):
-
-        """ Sets the dataset to be used in conjunction with Actual Evapotranspiration for WPbm"""
-
-        data_start = str(filtering_values[1])
-        data_end = str(filtering_values[2])
-
-        coll_npp_filtered = self._L1_NPP_DEKADAL.filterDate(
-            data_start,
-            data_end)
-        coll_npp_multiplied = coll_npp_filtered.map(lambda npp_images: npp_images.multiply(filtering_values[0]))
-
-        self.L1_AGBP_calc = coll_npp_multiplied
-
-
-        return self.L1_AGBP_calc
+        self.VisPar_WPgb = {"opacity": 0.85, "bands": "b1", "min": 0, "max": 1.2,
+                            "palette": "bc170f,e97a1a,fff83a,9bff40,5cb326", "region": WaterProductivityCalc._REGION}
 
     @property
     def image_selection(self):
 
-        """ Returns both datasets to be used for WPbm"""
+        """ Returns datasets to be used for WPgm"""
 
         return self.L1_AGBP_calc, self.L1_AET_calc
 
@@ -115,7 +82,7 @@ class L1WaterProductivity(WaterProductivityCalc):
             data_start,
             data_end)
 
-        collection_aet_filtered = self._L1_ETa_DEKADAL.filterDate(
+        collection_aet_filtered = self._L1_AET_DEKADAL.filterDate(
             data_start,
             data_end)
 
@@ -127,6 +94,23 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         self.L1_AGBP_calc = collection_agbp_filtered
         self.L1_AET_calc = collection_aet_filtered
+
+    @property
+    def multiply_npp(self, filtering_values):
+
+        """ Sets the dataset to be used in conjunction with Actual Evapotranspiration for WPgb"""
+
+        data_start = str(filtering_values[1])
+        data_end = str(filtering_values[2])
+
+        coll_npp_filtered = self._L1_NPP_DEKADAL.filterDate(
+            data_start,
+            data_end)
+        coll_npp_multiplied = coll_npp_filtered.map(lambda npp_images: npp_images.multiply(filtering_values[0]))
+
+        self.L1_AGBP_calc = coll_npp_multiplied
+
+        return self.L1_AGBP_calc
 
     def image_processing(self, L1_AGBP_calc, L1_AET_calc):
 
@@ -162,7 +146,7 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         """Generate a map id and a token for the calcualted WPbm raster file"""
 
-        map_id = wpbm_calc.getMapId(self.VisPar_WPbm)
+        map_id = wpbm_calc.getMapId(self.VisPar_WPgb)
         return map_id
 
     def generate_ts(self, paese, data_start, data_end,dataset):
@@ -172,13 +156,13 @@ class L1WaterProductivity(WaterProductivityCalc):
         if dataset == 'agbp':
             collection = self._L1_AGBP_DEKADAL
         elif dataset == 'eta':
-            collection = self._L1_ETa_DEKADAL
+            collection = self._L1_AET_DEKADAL
         elif dataset == 'aet':
             collection = self._L1_AET250
         elif dataset == 'npp':
             collection = self._L1_NPP_DEKADAL
 
-        just_country = self.countries.filter(ee.Filter.eq('Country', paese))
+        just_country = self._COUNTRIES.filter(ee.Filter.eq('Country', paese))
         cut_poly = just_country.geometry()
         cut_bounding_box = cut_poly.bounds(1)
 
@@ -204,11 +188,11 @@ class L1WaterProductivity(WaterProductivityCalc):
     def generate_areal_stats_annual_allcountries(self, year, ser='no output'):
 
         """Calculates several statistics for the Water Productivity pre-calculated 
-            raster for all africa countries and the requested year"""
+            raster for all africa _COUNTRIES and the requested year"""
 
         self.L1_logger.debug("Statistics for year %s" % year)
         africa_bbox = ee.Geometry.Rectangle(-15.64, -33.58, 59.06, 25.96)
-        filtered = self.countries.filterBounds(africa_bbox)
+        filtered = self._COUNTRIES.filterBounds(africa_bbox)
 
         means = self._L1_WP_ANNUAL.reduceRegions(
             collection=filtered,
@@ -249,7 +233,7 @@ class L1WaterProductivity(WaterProductivityCalc):
     def generate_areal_stats_dekad_country(self, chosen_country, wbpm_calc):
 
         """Calculates several statistics for the Water Productivity calculated raster for a chosen country"""
-        just_country = self.countries.filter(ee.Filter.eq('name', chosen_country))
+        just_country = self._COUNTRIES.filter(ee.Filter.eq('name', chosen_country))
         if just_country.size().getInfo() > 0:
             cut_poly = just_country.geometry()
             raster_nominal_scale = wbpm_calc.projection().nominalScale().getInfo()
@@ -293,7 +277,7 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         if viz_type == 'm':
 
-            ee.mapclient.addToMap(WPbm, self.VisPar_WPbm, 'Annual biomass water productivity')
+            ee.mapclient.addToMap(WPbm, self.VisPar_WPgb, 'Annual biomass water productivity')
             ee.mapclient.centerMap(17.75, 10.14, 4)
 
         elif viz_type == 'c':
@@ -304,7 +288,7 @@ class L1WaterProductivity(WaterProductivityCalc):
             url_thumb_ETaColl3 = ETaColl3.getThumbUrl(self.VisPar_ETay)
             thumb_imag_ETaColl3 = plt.imread(url_thumb_ETaColl3)
 
-            url_thumb_WPbm = WPbm.getThumbUrl(self.VisPar_WPbm)
+            url_thumb_WPbm = WPbm.getThumbUrl(self.VisPar_WPgb)
             thumb_imag_WPbm = plt.imread(url_thumb_WPbm)
 
             fig = plt.figure()

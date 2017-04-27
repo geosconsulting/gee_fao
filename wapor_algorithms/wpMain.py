@@ -89,7 +89,7 @@ def main(args=None):
 
     parser.add_argument('-w', '--annualstat',
                         required=False,
-                        help="Zonal statistics from an annual Water Productivity layer for all countries")
+                        help="Zonal statistics from an annual Water Productivity layer for all _COUNTRIES")
 
     parser.add_argument('-o', '--output',
                         choices=['csv', 'json'],
