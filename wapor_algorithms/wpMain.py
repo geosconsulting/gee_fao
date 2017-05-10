@@ -87,19 +87,20 @@ def main(args=None):
 
     selection_params = {'date_start': date_start, 'date_end': date_end}
     logger.debug(selection_params)
-    #analysis_level_1.date_selection(**selection_params)
+    analysis_level_1.date_selection(**selection_params)
+    analysis_level_1.image_selection()
 
     if results.aggregation:
-        logger.debug("CHOSEN DAATASET %s " % results.aggregation)
+        logger.debug("CHOSEN DATASET %s " % results.aggregation)
         if results.aggregation == 'aet':
-            pass
+            eta = analysis_level_1.aet_aggregated()
         if results.aggregation == 'agbp':
-            pass
+            agbp = analysis_level_1.agbp_aggregated()
         if results.aggregation == 'wp_gb':
-            analysis_level_1.image_selection(**selection_params)
             agbp, eta, wp_gb = analysis_level_1.water_productivity_gross_biomass()
         if results.aggregation == 't_frac':
-            t_frac = analysis_level_1.tfrac(eta)
+            eta = analysis_level_1.aet_aggregated()
+            t_frac = analysis_level_1.transpiration()
 
     if results.map:
         if results.map == 'aet':
@@ -114,13 +115,14 @@ def main(args=None):
     if results.arealstat:
         country_stats = analysis_level_1.generate_areal_stats_dekad_country(results.arealstat, wp_gb)
         if country_stats != 'no country':
-            print country_stats
+            logger.debug(country_stats)
         else:
             logger.debug("Country Error")
             logger.error("No country named {} in db".format(results.arealstat))
 
     if results.map_id:
-        print analysis_level_1.map_id_getter(wp_gb)
+        map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
+        logger.debug(analysis_level_1.map_id_getter(**map_ids))
 
     # analysis_level_1.image_export(results.export, wp_gb)
 

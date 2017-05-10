@@ -68,21 +68,17 @@ class L1WaterProductivity(WaterProductivityCalc):
         self._date_start = str(kwargs.get('date_start'))
         self._date_end = str(kwargs.get('date_end'))
 
-
-    def image_selection(self, **kwargs):
+    def image_selection(self):
 
         """ Filter datasets selecting only images within the starting end ending date to be used for WPbm"""
 
-        date_start = str(kwargs.get('date_start'))
-        date_end = str(kwargs.get('date_end'))
-
         collection_agbp_filtered = L1WaterProductivity._L1_NPP_DEKADAL.filterDate(
-            date_start,
-            date_end)
+            self._date_start,
+            self._date_end)
 
         collection_aet_filtered = L1WaterProductivity._L1_AET_DEKADAL.filterDate(
-            date_start,
-            date_end)
+            self._date_start,
+            self._date_end)
 
         self.L1_AGBP_calc = collection_agbp_filtered
         self.L1_AET_calc = collection_aet_filtered
@@ -100,69 +96,54 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         """ Sets the dataset to be used in conjunction with Actual Evapotranspiration for WPgb"""
 
-        data_start = str(filtering_values[1])
-        data_end = str(filtering_values[2])
-
         coll_npp_filtered = self._L1_NPP_DEKADAL.filterDate(
-            data_start,
-            data_end)
+            self._date_start,
+            self._date_end)
         coll_npp_multiplied = coll_npp_filtered.map(lambda npp_images: npp_images.multiply(filtering_values[0]))
 
         self.L1_AGBP_calc = coll_npp_multiplied
 
         return self.L1_AGBP_calc
 
-    def agbp_annual(self, L1_AGBP_calc):
+    def agbp_aggregated(self):
 
-        """xxxxxxx"""
+        """Aggregate above ground biomass productivity for annual calculation or water productivity"""
 
         # the image.multiply(0.01444) multiplies all bands by 0.01444, including the days in dekad.
         # That is why the final WP values were so low...we should first multiply, then, in the same function, add the extra band
-        def AGBP_multiplication(image):
+        def agbp_multiplication(image):
             img_multi = image.multiply(0.01444).addBands(image.metadata('days_in_dk'))
             return img_multi
-        AGBP_NPP_multiplied = L1_AGBP_calc.map(AGBP_multiplication)
+        agbp_npp_multiplied = self.L1_AGBP_calc.map(agbp_multiplication)
 
         # get AGBP value, divide by 10 (as per FRAME spec) to get daily value, and multiply by number of days in dekad
         # we don't need to divide by 10 now: it was previously valid on sample data, and we don't use AGBP as input anyway.
-        def NPP_add_dk(image):
+        def npp_add_dk(image):
             mmdk = image.select('b1').multiply(image.select('days_in_dk'))
             return mmdk
-        NPP_with_dekad = AGBP_NPP_multiplied.map(NPP_add_dk)
+        npp_with_dekad = agbp_npp_multiplied.map(npp_add_dk)
 
-        sum_AGBP_annual = NPP_with_dekad.reduce(ee.Reducer.sum())
+        aggregated_agbp = npp_with_dekad.reduce(ee.Reducer.sum())
 
-        return sum_AGBP_annual
+        return aggregated_agbp
 
-    def aet_annual(self, L1_AET_calc):
+    def aet_aggregated(self):
 
-        """xxxxxxx"""
+        """Aggregate actual evapotranspiration for annual calculation or water productivity"""
 
-        collAET_sorted = L1_AET_calc.sort('system:time_start', True)
+        coll_aet_sorted = self.L1_AET_calc.sort('system:time_start', True)
+        aggregated_aet = coll_aet_sorted.reduce(ee.Reducer.sum())
 
-        # Get scale (in meters) information from first image
-        scale_calc = ee.Image(collAET_sorted.first()).projection().nominalScale().getInfo()
+        return aggregated_aet
 
-        sum_AET_annual = collAET_sorted.reduce(ee.Reducer.sum())
-        return sum_AET_annual
+    def transpiration(self):
 
-    def tfrac(self, L1_AET_calc):
+        """Aggregate transpiration using acttual evapotranspiration,above ground biomas productivity and t_fraction"""
 
-        """xxxxxxx"""
-
-        aet_num = L1_AET_calc.size().getInfo()
-        self.L1_logger.debug("AET selected %d" % aet_num)
-
-        # This is caluclated at class level for WPgb, WPnb
+        # This is calculated at class level for WPgb, WPnb
         # collAETFiltered = _L1_AET_DEKADAL.filterDate(start, end).sort('system:time_start', True)
         L1_TFRAC_calc = L1WaterProductivity._L1_TFRAC_DEKADAL.filterDate(self._date_start, self._date_end).sort('system:time_start', True)
 
-        # TFRAC_AET_collection = L1_AET_calc.merge(L1_TFRAC_calc)
-
-        # In[66]:
-
-        # print TFRAC_AET_collection.first().propertyNames().getInfo()
-        # print TFRAC_AET_collection.first().propertyNames().getInfo()[7]
 
         # JOINING TWO Collections - Start
         Join = ee.Join.inner()
@@ -171,49 +152,19 @@ class L1WaterProductivity(WaterProductivityCalc):
             rightField='system:time_start'
         )
 
-        TFRAC_AET_collection_Join = ee.ImageCollection(Join.apply(L1_AET_calc,
+        TFRAC_AET_collection_Join = ee.ImageCollection(Join.apply(self.L1_AET_calc,
                                                                   L1_TFRAC_calc,
                                                                   FilterOnStartTime))
-        print("Joined collections", TFRAC_AET_collection_Join)
+        self.L1_logger.debug("Joined collections %s", TFRAC_AET_collection_Join.getInfo())
         # JOINING TWO Collections - End
 
         def Tfrac_AETdk(image):
-            # print contatore
             image_aet = ee.Image(image.get("primary"))
             image_tfrac = ee.Image(image.get("secondary"))
             t_a = ((image_aet.select('b1').multiply(image_tfrac.select('b1').divide(100)))
                    .multiply(0.1)).multiply(ee.Number(image_aet.get('days_in_dk'))).float()
             return ee.Image(t_a)
-
         T_annual = TFRAC_AET_collection_Join.map(Tfrac_AETdk)
-
-        # TESTING Image metadata and properties - start
-        first_immage_of_join = ee.Image(TFRAC_AET_collection_Join.first())
-        print("First: ", first_immage_of_join)
-
-        properties = first_immage_of_join.propertyNames()
-        print("Metadata properties of First: ", properties())
-
-        AET_component = ee.Image(first_immage_of_join.get("primary"))
-        print("get(days_in_dk)", AET_component.get('days_in_dk'))
-
-        AET_component_3dekad = ee.Image("projects/fao-wapor/L1_TFRAC/L1_TFRAC_1003")
-        days_directly = AET_component_3dekad.get('days_in_dk')
-        print("Third Dekad January 11 days check", days_directly.getInfo())
-
-        # Get scale (in meters) information from first image
-        scale_calc = AET_component_3dekad.projection().nominalScale().getInfo()
-        print('Image scale: ', scale_calc)
-
-        # In[123]:
-
-        TFRAC_component = ee.Image(first_immage_of_join.get("secondary"));
-        TFRAC_band = TFRAC_component.select('b1');
-
-        # ***************** TESTING Image metadata and properties - End
-
-        #tfrac_num = T_annual.size().getInfo()
-        #self.L1_logger.debug("AGBP selected %d" % tfrac_num)
 
         SUM_TFRAC_annual = T_annual.reduce(ee.Reducer.sum()).toFloat()
         return SUM_TFRAC_annual
@@ -253,24 +204,29 @@ class L1WaterProductivity(WaterProductivityCalc):
         """wp_net_biomass calculation returns all intermediate results besides the final wp_gross_biomass"""
         pass
 
-    @staticmethod
-    def map_id_getter(wpbm_calc):
+
+    def map_id_getter(self,**outputs_id):
 
         """Generate a map id and a token for the calcualted WPbm raster file"""
 
-        map_id = wpbm_calc.getMapId()
+        map_ids = {}
+        for key, val in outputs_id.iteritems():
+            map_id = val.getMapId()
+            map_ids[key] = {}
+            map_ids[key]['mapid'] = map_id['mapid']
+            map_ids[key]['token'] = map_id['token']
+            map_ids[key]['image'] = map_id['image'].getInfo()
 
-        tilepath = ee.data.getTileUrl(map_id, 1, 0, 1)
-        print tilepath
-
+        # tilepath = ee.data.getTileUrl(map_id, 1, 0, 1)
+        # print tilepath
         # mappa = mapclient.MapClient()
         # mappa.addOverlay(mapclient.MakeOverlay(wpbm_calc.getMapId({'min': 0, 'max': 3000})))
         # mappa.centerMap(17.75, 10.14, 4)
 
-        return map_id
+        return map_ids
 
     @staticmethod
-    def image_visualization(raster_name,raster_plot):
+    def image_visualization(raster_name, raster_plot):
 
         """Output the calculated raster using a map vizualizer """
 
