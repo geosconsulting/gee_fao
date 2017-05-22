@@ -5,6 +5,7 @@
 import argparse
 import datetime
 import logging
+import sys
 
 from wpCalc import L1WaterProductivity
 
@@ -16,22 +17,9 @@ def valid_date(s):
         msg = "Not a valid date: '{0}'.".format(s)
         raise argparse.ArgumentTypeError(msg)
 
-def main(args=None):
 
-    logger = logging.getLogger("wpWin")
-    logger.setLevel(level=logging.DEBUG)
-
-    formatter = logging.Formatter("%(levelname) -4s %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s")
-
-    fh = logging.FileHandler('wapor.log')
-    fh.setLevel(logging.ERROR)
-    fh.setFormatter(formatter)
-    logger.addHandler(fh)
-
-    ch = logging.StreamHandler()
-    ch.setLevel(logging.DEBUG)
-    ch.setFormatter(formatter)
-    logger.addHandler(ch)
+def setup(args=None, parser=None):
+    # import ipdb; ipdb.set_trace()
 
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
 
@@ -66,11 +54,31 @@ def main(args=None):
                         help="Show calculated output overlaid on Google Map"
                         )
 
-    parser.add_argument("-v", "--verbose",
-                        help="Increase output verbosity",
-                        action="store_true")
+    # parser.add_argument("-v", "--verbose",
+    #                     help="Increase output verbosity",
+    #                     action="store_true")
 
-    results = parser.parse_args()
+    # return parser.parse_args()
+    # print 'wpMainParser='+str(parser.parse_args())
+    return parser
+
+
+def run(results):
+
+    logger = logging.getLogger("wpWin")
+    logger.setLevel(level=logging.DEBUG)
+
+    formatter = logging.Formatter("%(levelname) -4s %(asctime)s %(module)s:%(lineno)s %(funcName)s %(message)s")
+
+    fh = logging.FileHandler('wapor.log')
+    fh.setLevel(logging.ERROR)
+    fh.setFormatter(formatter)
+    logger.addHandler(fh)
+
+    ch = logging.StreamHandler(sys.stdout)
+    ch.setLevel(logging.DEBUG)
+    ch.setFormatter(formatter)
+    logger.addHandler(ch)
 
     analysis_level_1 = L1WaterProductivity()
 
@@ -122,9 +130,11 @@ def main(args=None):
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
-        logger.debug(analysis_level_1.map_id_getter(**map_ids))
+        logger.debug("RESULT=%s" % analysis_level_1.map_id_getter(**map_ids))
 
     # analysis_level_1.image_export(results.export, wp_gb)
 
+
 if __name__ == '__main__':
-    main()
+    results = setup().parse_args()
+    run(results)
