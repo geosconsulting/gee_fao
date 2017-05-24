@@ -13,7 +13,7 @@
 
 import ee
 import time
-from ee import mapclient
+# from ee import mapclient
 import sys
 import os
 import glob

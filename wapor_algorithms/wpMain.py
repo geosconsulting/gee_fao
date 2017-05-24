@@ -5,12 +5,7 @@
 import argparse
 #import datetime
 import logging
-#<<<<<<< Updated upstream
 import sys
-#=======
-#import inspect
-#>>>>>>> Stashed changes
-
 from wpCalc import L1WaterProductivity
 
 # def valid_date(s):
@@ -23,7 +18,6 @@ from wpCalc import L1WaterProductivity
 
 def setup(args=None, parser=None):
 
-    # import ipdb; ipdb.set_trace()
 
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
 
@@ -67,7 +61,7 @@ def setup(args=None, parser=None):
     # print 'wpMainParser='+str(parser.parse_args())
     return parser
 
-    #<<<<<<< Updated upstream
+
 def run(results):
 
     logger = logging.getLogger("wpWin")
@@ -84,7 +78,7 @@ def run(results):
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
-    #=======
+
     # results = parser.parse_args()
     # logger.debug(results)
 
@@ -92,13 +86,8 @@ def run(results):
     logger.debug(args_list)
     logger.debug(len(args_list['timeframe']))
 
-    # def methods(**kwargs):
-    #     print kwargs
-    # methods(**vars(results))
-
     # Metodo statico non devo inizializzare la classe molti saranno cosi alla fine
     # print L1WaterProductivity.water_productivity_net_biomass_pre_calculated_annual_values(2010)
-    #>>>>>>> Stashed changes
 
     analysis_level_1 = L1WaterProductivity()
 
@@ -118,15 +107,16 @@ def run(results):
     analysis_level_1.date_selection(**selection_params)
     analysis_level_1.image_selection()
 
-    if results.aggregation:
+    selection_aggregation = list(results.aggregation)[0]
+    if selection_aggregation:
         logger.debug("Working on %s " % results.aggregation)
-        if results.aggregation == 'aet':
+        if selection_aggregation == 'aet':
             eta = analysis_level_1.aet_aggregated()
-        if results.aggregation == 'agbp':
+        if selection_aggregation == 'agbp':
             agbp = analysis_level_1.agbp_aggregated()
-        if results.aggregation == 'wp_gb':
+        if selection_aggregation == 'wp_gb':
             agbp, eta, wp_gb = analysis_level_1.water_productivity_gross_biomass()
-        if results.aggregation == 't_frac':
+        if selection_aggregation == 't_frac':
             eta = analysis_level_1.aet_aggregated()
             t_frac = analysis_level_1.transpiration()
 
@@ -140,13 +130,14 @@ def run(results):
         if results.map == 't_frac':
             analysis_level_1.image_visualization(results.map, t_frac)
 
-    if results.arealstat:
-        country_stats = analysis_level_1.generate_areal_stats_fusion_tables(results.arealstat, wp_gb)
+    selection_country = list(results.arealstat)[0]
+    if selection_country:
+        country_stats = analysis_level_1.generate_areal_stats_fusion_tables(selection_country, wp_gb)
         if country_stats != 'no country':
-            logger.debug(country_stats)
+            logger.debug("RESPONSE=%s" % country_stats)
         else:
             logger.debug("Country Error")
-            logger.error("No country named {} in db".format(results.arealstat))
+            logger.error("No country named {} in db".format(selection_country))
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
@@ -160,13 +151,3 @@ if __name__ == '__main__':
     # Updated upstream
     results = setup().parse_args()
     run(results)
-    #=======
-
-    # vari = inspect.getargspec(main)
-    # print vari
-    # print inspect.getcallargs(main)
-    # print inspect.getsource(main)
-
-    #main()
-
-#>>>>>>> Stashed changes
