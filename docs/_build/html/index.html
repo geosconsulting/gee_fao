@@ -56,101 +56,60 @@
 agriculture water productivity over Africa and the Near East.
 <a class="reference external" href="http://www.fao.org/in-action/remote-sensing-for-water-productivity/en/">WaPOR</a>.
 For more information on how to use the library <a class="reference internal" href="api.html#api"><span class="std std-ref">API Documentation</span></a></p>
-</div>
-<div class="section" id="program-parameters">
-<h1>Program Parameters<a class="headerlink" href="#program-parameters" title="Permalink to this headline">¶</a></h1>
-<dl class="docutils">
-<dt>usage: wpMain.py [-h] [-a Year | -d Start End Dates Start End Dates] [-c | -m]</dt>
-<dd>[-e {u,d,a,g,n}] [-i] [-r REPLACE] [-t {agbp,eta,aet,npp}]
-[-s AREALSTAT] [-v]</dd>
-</dl>
-<p>Water Productivity using Google Earth Engine</p>
-<dl class="docutils">
-<dt>optional arguments:</dt>
-<dd><table class="first docutils option-list" frame="void" rules="none">
+<p>Program Parameters.</p>
+<p>usage: wpMain.py <strong>timeframe</strong> [-e {u,d,t}] [-i] [-a [&#8216;agbp&#8217;, &#8216;aet&#8217;, &#8216;t_frac&#8217;, &#8216;wp_gb&#8217;, &#8216;wp_nb&#8217;]] [-s] [-v] [-h]</p>
+<ul class="simple">
+<li><strong>bold</strong> = mandatory</li>
+</ul>
+<div class="section" id="arguments">
+<h2>Arguments:<a class="headerlink" href="#arguments" title="Permalink to this headline">¶</a></h2>
+<blockquote>
+<div><p>timeframe Calculate Water Productivity Annually for the chosen period</p>
+<table class="docutils option-list" frame="void" rules="none">
 <col class="option" />
 <col class="description" />
 <tbody valign="top">
 <tr><td class="option-group">
-<kbd><span class="option">-h</span>, <span class="option">--help</span></kbd></td>
+<kbd><span class="option">-h</span></kbd></td>
 <td>show this help message and exit</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-a <var>Year</var></span>, <span class="option">--annual <var>Year</var></span></kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Calculate Water Productivity Annually - Year must be
-provided</td></tr>
 </tbody>
 </table>
 <dl class="docutils">
-<dt>-d Start End Dates Start End Dates, &#8211;dekadal Start End Dates Start End Dates</dt>
-<dd>Calculate Water Productivity for dekads - Starting and
-ending date must be provided with the following format
-YYYY-MM-DD</dd>
+<dt>-x, &#8211;export, choices=[&#8216;u&#8217;, &#8216;d&#8217;, &#8216;t&#8217;],</dt>
+<dd>help=&#8221;Choose export to url(-u), drive (-d) or asset (-t)&#8221;)</dd>
 </dl>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group">
-<kbd><span class="option">-c</span>, <span class="option">--chart</span></kbd></td>
-<td>Each calculated component (AGBP, AET, WPm) shown on a
-chart</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-m</span>, <span class="option">--map</span></kbd></td>
-<td>Show the final output overlaid on Google Map</td></tr>
-</tbody>
-</table>
+<p>-i, &#8211;map_id help=&#8221;Generate map id for the chosen dataset&#8221;</p>
+<p>-s, &#8211;arealstat help=&#8221;Zonal statistics chosen country and for the chosen dataset&#8221;</p>
 <dl class="docutils">
-<dt>-e {u,d,a,g,n}, &#8211;export {u,d,a,g,n}</dt>
-<dd>Choose export to url(-u), drive (-d), asset (-t) or
-geoserver (-g)</dd>
+<dt>-o, &#8211;output choices=[&#8216;csv&#8217;, &#8216;json&#8217;],</dt>
+<dd>help=&#8221;Choose format fo the annual statistics csv(-o &#8216;csv&#8217;) or json (-o &#8216;json&#8217;)&#8221;</dd>
+<dt>-a, &#8211;aggregation choices=[&#8216;agbp&#8217;, &#8216;aet&#8217;, &#8216;t_frac&#8217;, &#8216;wp_gb&#8217;, &#8216;wp_nb&#8217;],</dt>
+<dd>help=&#8221;which dataset must be calculated between the chosen timeframe&#8221;</dd>
 </dl>
-<table class="docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group">
-<kbd><span class="option">-i</span>, <span class="option">--map_id</span></kbd></td>
-<td>Generate map id for generating tiles</td></tr>
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-r <var>REPLACE</var></span>, <span class="option">--replace <var>REPLACE</var></span></kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Replace the Above Ground Biomass Production with Net
-Primary Productivity multiplied by a constant value.
-Sending -s 1.25 will set agbp=npp * 1.25. If not
-provided default datasets will be used instead</td></tr>
-</tbody>
-</table>
+<p>-v, &#8211;verbose, help=&#8221;Increase output verbosity&#8221;</p>
 <dl class="docutils">
-<dt>-t {agbp,eta,aet,npp}, &#8211;timeseries {agbp,eta,aet,npp}</dt>
-<dd>Time Series from data collections stored in GEE for
-the chosen country/dataset</dd>
+<dt>-m,&#8211;map, choices=[&#8216;agbp&#8217;, &#8216;aet&#8217;, &#8216;t_frac&#8217;, &#8216;wp_gb&#8217;, &#8216;wp_nb&#8217;]</dt>
+<dd>help=&#8221;Show calculated output overlaid on Google Map&#8221;</dd>
 </dl>
-<table class="last docutils option-list" frame="void" rules="none">
-<col class="option" />
-<col class="description" />
-<tbody valign="top">
-<tr><td class="option-group" colspan="2">
-<kbd><span class="option">-s <var>AREALSTAT</var></span>, <span class="option">--arealstat <var>AREALSTAT</var></span></kbd></td>
-</tr>
-<tr><td>&#160;</td><td>Zonal statistics form a WaterProductivity layer
-generated on the fly in GEE for the chosen country</td></tr>
-<tr><td class="option-group">
-<kbd><span class="option">-v</span>, <span class="option">--verbose</span></kbd></td>
-<td>Increase output verbosity</td></tr>
-</tbody>
-</table>
-</dd>
-</dl>
-<div class="section" id="simple-use">
-<h2>Simple Use<a class="headerlink" href="#simple-use" title="Permalink to this headline">¶</a></h2>
-<p>Calculate Water Productivity betweeen 1st of January 2015 and 30th of January 2015 outuput to a map viewer
-statistics calculated for Benin and generate map ID</p>
+</div></blockquote>
+<p># Simple Use
+###Example 1
+* Calculate Gross Biomass Water Productivity between 1st of January 2015 and 30th of January 2015
+* Statistics calculated for Benin
+* Generate map ID</p>
 <blockquote>
-<div><em>wpMain.py -d 2015-1-1 2015-1-30 -m -s &#8220;Benin&#8221; -i</em></div></blockquote>
-<p>Calculate Water Productivity for 2015 output to a chart</p>
+<div>#### wpMain.py 2015-1-1 2015-1-30 -a wp_gb -i -s &#8220;Benin&#8221;</div></blockquote>
+<p>###Example 2
+* Calculate Gross Biomass Water Productivity for 2015 (already stored from 2010-2016)</p>
 <blockquote>
-<div><em>wpMain.py -a 2015 -c</em></div></blockquote>
+<div>Will be possible to calculate new dataset only from 2017 onwards</div></blockquote>
+<ul>
+<li><p class="first">Generate map ID</p>
+<blockquote>
+<div><p>#### wpMain.py 2015 -a wp_gb -i</p>
+</div></blockquote>
+</li>
+</ul>
 </div>
 </div>
 <div class="section" id="contents">
@@ -183,9 +142,8 @@ statistics calculated for Benin and generate map ID</p>
         <div class="sphinxsidebarwrapper">
   <h3><a href="#">Table Of Contents</a></h3>
   <ul>
-<li><a class="reference internal" href="#">Welcome to WaPOR&#8217;s documentation!</a></li>
-<li><a class="reference internal" href="#program-parameters">Program Parameters</a><ul>
-<li><a class="reference internal" href="#simple-use">Simple Use</a></li>
+<li><a class="reference internal" href="#">Welcome to WaPOR&#8217;s documentation!</a><ul>
+<li><a class="reference internal" href="#arguments">Arguments:</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#contents">Contents</a></li>

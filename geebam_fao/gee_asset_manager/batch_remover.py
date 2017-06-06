@@ -1,7 +1,6 @@
 import fnmatch
 import logging
 import sys
-
 import ee
 
 

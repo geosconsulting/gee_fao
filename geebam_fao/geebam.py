@@ -52,13 +52,12 @@ def main(args=None):
     parser_upload.set_defaults(func=upload_from_parser)
 
     parser_cancel = subparsers.add_parser('cancel', help='Cancel all running tasks')
-    parser_cancel.set_defaults(func=cancel_all_running_tasks_from_parser)
+    parser_cancel.set_defaults(func = cancel_all_running_tasks_from_parser)
 
     args = parser.parse_args()
 
     ee.Initialize()
-    args.func(args)    
-    
+    args.func(args)
 
 if __name__ == '__main__':
     main()

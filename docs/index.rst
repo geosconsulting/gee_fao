@@ -12,63 +12,52 @@ agriculture water productivity over Africa and the Near East.
 For more information on how to use the library :ref:`api`
 
 
-Program Parameters
-==================
+Program Parameters.
 
-usage: wpMain.py [-h] [-a Year | -d Start End Dates Start End Dates] [-c | -m]
-                 [-e {u,d,a,g,n}] [-i] [-r REPLACE] [-t {agbp,eta,aet,npp}]
-                 [-s AREALSTAT] [-v]
+usage: wpMain.py **timeframe** [-e {u,d,t}] [-i] [-a ['agbp', 'aet', 't_frac', 'wp_gb', 'wp_nb']] [-s] [-v] [-h]
+    
+- **bold** = mandatory
 
-Water Productivity using Google Earth Engine
+Arguments:
+--------------   
+     
+    timeframe Calculate Water Productivity Annually for the chosen period 
+    
+    -h 	show this help message and exit
+    -x, --export, choices=['u', 'd', 't'],
+                        help="Choose export to url(-u), drive (-d) or asset (-t)")
 
-optional arguments:
-  -h, --help            show this help message and exit
-  -a Year, --annual Year
-                        Calculate Water Productivity Annually - Year must be
-                        provided
+    -i, --map_id help="Generate map id for the chosen dataset"
 
-  -d Start End Dates Start End Dates, --dekadal Start End Dates Start End Dates
-                        Calculate Water Productivity for dekads - Starting and
-                        ending date must be provided with the following format
-                        YYYY-MM-DD
+    -s, --arealstat help="Zonal statistics chosen country and for the chosen dataset"
 
-  -c, --chart           Each calculated component (AGBP, AET, WPm) shown on a
-                        chart
+    -o, --output choices=['csv', 'json'],
+                        help="Choose format fo the annual statistics csv(-o 'csv') or json (-o 'json')"
 
-  -m, --map             Show the final output overlaid on Google Map
+    -a, --aggregation choices=['agbp', 'aet', 't_frac', 'wp_gb', 'wp_nb'],
+                       help="which dataset must be calculated between the chosen timeframe"
+    
+    -v, --verbose, help="Increase output verbosity" 
 
-  -e {u,d,a,g,n}, --export {u,d,a,g,n}
-                        Choose export to url(-u), drive (-d), asset (-t) or
-                        geoserver (-g)
+    Only available to developers for testing purposes not available on server
+    -------------------------------------------------------------------------
+    -m,--map, choices=['agbp', 'aet', 't_frac', 'wp_gb', 'wp_nb']
+                        help="Show calculated output overlaid on Google Map"
 
-  -i, --map_id          Generate map id for generating tiles
+# Simple Use
+###Example 1
+* Calculate Gross Biomass Water Productivity between 1st of January 2015 and 30th of January 2015 
+* Statistics calculated for Benin
+* Generate map ID
 
-  -r REPLACE, --replace REPLACE
-                        Replace the Above Ground Biomass Production with Net
-                        Primary Productivity multiplied by a constant value.
-                        Sending -s 1.25 will set agbp=npp * 1.25. If not
-                        provided default datasets will be used instead
+    #### wpMain.py 2015-1-1 2015-1-30 -a wp_gb -i -s "Benin" 
 
-  -t {agbp,eta,aet,npp}, --timeseries {agbp,eta,aet,npp}
-                        Time Series from data collections stored in GEE for
-                        the chosen country/dataset
+###Example 2
+* Calculate Gross Biomass Water Productivity for 2015 (already stored from 2010-2016)
+  Will be possible to calculate new dataset only from 2017 onwards
+* Generate map ID
 
-  -s AREALSTAT, --arealstat AREALSTAT
-                        Zonal statistics form a WaterProductivity layer
-                        generated on the fly in GEE for the chosen country
-
-  -v, --verbose         Increase output verbosity
-
-Simple Use
-----------
-Calculate Water Productivity betweeen 1st of January 2015 and 30th of January 2015 outuput to a map viewer
-statistics calculated for Benin and generate map ID
-
-   *wpMain.py -d 2015-1-1 2015-1-30 -m -s "Benin" -i*
-
-Calculate Water Productivity for 2015 output to a chart
-
-   *wpMain.py -a 2015 -c*
+    #### wpMain.py 2015 -a wp_gb -i
 
 
 Contents

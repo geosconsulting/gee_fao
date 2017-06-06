@@ -58,73 +58,11 @@
 </div>
 <p>This will import the following:</p>
 <ul class="simple">
-<li>The class <a href="#id1"><span class="problematic" id="id2">:L1WaterProductivity:`L1WaterProductivity`</span></a> and its subclasses</li>
+<li>The class <a href="#id1"><span class="problematic" id="id2">:L1WaterProductivity:`run`</span></a> and its subclasses</li>
 <li>Several <a class="reference internal" href="#id3">constants</a> representing the datasets available in Google Earth Engine and the visualization parameters.</li>
 </ul>
 <div class="section" id="the-water-productivity-class">
 <h2>The Water Productivity class<a class="headerlink" href="#the-water-productivity-class" title="Permalink to this headline">¶</a></h2>
-<dl class="class">
-<dt id="wapor_algorithms.L1WaterProductivity">
-<em class="property">class </em><code class="descclassname">wapor_algorithms.</code><code class="descname">L1WaterProductivity</code><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity" title="Permalink to this definition">¶</a></dt>
-<dd><p>Create Water Productivity raster file for annual and dekadal timeframes for Level 1 (Countries and Basins</p>
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.generate_areal_stats">
-<code class="descname">generate_areal_stats</code><span class="sig-paren">(</span><em>paese</em>, <em>wbpm_calc</em><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.generate_areal_stats" title="Permalink to this definition">¶</a></dt>
-<dd><p>INCOMPLETE  Calculates several statistics for the Water Productivity calculated raster for a chosen country</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.generate_tiles">
-<code class="descname">generate_tiles</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.generate_tiles" title="Permalink to this definition">¶</a></dt>
-<dd><p>INCOMPLETE  Split the calculated WPbm in72 tiles facilitating the export</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.generate_ts">
-<code class="descname">generate_ts</code><span class="sig-paren">(</span><em>paese</em>, <em>data_start</em>, <em>data_end</em>, <em>dataset</em><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.generate_ts" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a chart with the mean values calculated for a chosen country</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.image_export">
-<code class="descname">image_export</code><span class="sig-paren">(</span><em>exp_type</em>, <em>WPbm</em><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.image_export" title="Permalink to this definition">¶</a></dt>
-<dd><p>INCOMPLETE Export the 72 of the calculated WPbm to Google Drive,
-GEE Asset or generating a ulr for each tile</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.image_processing">
-<code class="descname">water_productivity_gross_biomass</code><span class="sig-paren">(</span><em>L1_AGBP_calc</em>, <em>L1_AET_calc</em><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.image_processing" title="Permalink to this definition">¶</a></dt>
-<dd><p>WPbm calculation returns all intermediate results besides the final WPbm</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="wapor_algorithms.L1WaterProductivity.aet_annual">
-<code class="descname">aet_aggregated</code><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.aet_annual" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns both datasets to be used for WPbm</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.image_visualization">
-<code class="descname">image_visualization</code><span class="sig-paren">(</span><em>viz_type</em>, <em>L1_AGBP</em>, <em>ETaColl3</em>, <em>WPbm</em><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.image_visualization" title="Permalink to this definition">¶</a></dt>
-<dd><p>Output the calculated WPbm using a map vizualizer or a chart (in this case
-every componenet of the caluclation is plotted</p>
-</dd></dl>
-
-<dl class="method">
-<dt id="wapor_algorithms.L1WaterProductivity.map_id_getter">
-<code class="descname">map_id_getter</code><span class="sig-paren">(</span><em>wpbm_calc</em><span class="sig-paren">)</span><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.map_id_getter" title="Permalink to this definition">¶</a></dt>
-<dd><p>Generate a map id and a token for the calcualted WPbm raster file</p>
-</dd></dl>
-
-<dl class="attribute">
-<dt id="wapor_algorithms.L1WaterProductivity.multiply_npp">
-<code class="descname">multiply_npp</code><a class="headerlink" href="#wapor_algorithms.L1WaterProductivity.multiply_npp" title="Permalink to this definition">¶</a></dt>
-<dd><p>Returns the dataset to be used in conjunction with Actual Evapotranspiration for WPbm</p>
-</dd></dl>
-
-</dd></dl>
-
 </div>
 <div class="section" id="constants">
 <h2>Constants<a class="headerlink" href="#constants" title="Permalink to this headline">¶</a></h2>

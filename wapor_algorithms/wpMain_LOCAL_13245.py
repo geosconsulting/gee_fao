@@ -6,9 +6,6 @@ import argparse
 #import datetime
 import logging
 import sys
-#import inspect
-
-
 from wpCalc import L1WaterProductivity
 
 # def valid_date(s):
@@ -20,6 +17,7 @@ from wpCalc import L1WaterProductivity
 
 
 def setup(args=None, parser=None):
+
 
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
 
@@ -35,9 +33,7 @@ def setup(args=None, parser=None):
                         help="Generate map id for generating tiles",
                         action="store_true")
 
-    parser.add_argument('-s', '--arealstat',
-                        choices=['c','w','g'],
-                        nargs=argparse.REMAINDER,
+    parser.add_argument('-s', '--arealstat', #choices=['f', 'j'],
                         help="Zonal statistics form a WaterProductivity generated in GEE "
                              "for the chosen Country/Watershed or User Defined Area")
 
@@ -57,11 +53,14 @@ def setup(args=None, parser=None):
                         help="Show calculated output overlaid on Google Map"
                         )
 
-    parser.add_argument("-v", "--verbose",
-                        help="Increase output verbosity",
-                        action="store_true")
+    # parser.add_argument("-v", "--verbose",
+    #                     help="Increase output verbosity",
+    #                     action="store_true")
 
+    # return parser.parse_args()
+    # print 'wpMainParser='+str(parser.parse_args())
     return parser
+
 
 def run(results):
 
@@ -80,14 +79,14 @@ def run(results):
     ch.setFormatter(formatter)
     logger.addHandler(ch)
 
+    # results = parser.parse_args()
+    # logger.debug(results)
+
     args_list = {k: v for k, v in vars(results).items() if v is not None}
-    #logger.debug(len(args_list['timeframe']))
+    logger.debug(args_list)
+    logger.debug(len(args_list['timeframe']))
 
-    # def methods(**kwargs):
-    #     print kwargs
-    # methods(**vars(results))
-
-    # Static method many will be similar to reduce the verbosity of the code
+    # Metodo statico non devo inizializzare la classe molti saranno cosi alla fine
     # print L1WaterProductivity.water_productivity_net_biomass_pre_calculated_annual_values(2010)
 
     analysis_level_1 = L1WaterProductivity()
@@ -109,14 +108,18 @@ def run(results):
     analysis_level_1.image_selection()
 
     if results.aggregation:
-        logger.debug("Working on %s " % results.aggregation)
-        if results.aggregation == 'aet':
+        if isinstance(results.aggregation, list):
+            selection_aggregation = results.aggregation[0]
+        else:
+            selection_aggregation = results.aggregation
+        logger.debug("Working on %s " % selection_aggregation)
+        if selection_aggregation == 'aet':
             eta = analysis_level_1.aet_aggregated()
-        if results.aggregation == 'agbp':
+        if selection_aggregation == 'agbp':
             agbp = analysis_level_1.agbp_aggregated()
-        if results.aggregation == 'wp_gb':
+        if selection_aggregation == 'wp_gb':
             agbp, eta, wp_gb = analysis_level_1.water_productivity_gross_biomass()
-        if results.aggregation == 't_frac':
+        if selection_aggregation == 't_frac':
             eta = analysis_level_1.aet_aggregated()
             t_frac = analysis_level_1.transpiration()
 
@@ -131,21 +134,26 @@ def run(results):
             analysis_level_1.image_visualization(results.map, t_frac)
 
     if results.arealstat:
-        area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
-        logger.debug(area_stats)
+        if isinstance(results.arealstat, list):
+            selection_country = results.arealstat[0]
+        else:
+            selection_country = results.arealstat
+        country_stats = analysis_level_1.generate_areal_stats_fusion_tables(selection_country, wp_gb)
+        if country_stats != 'no country':
+            logger.debug("RESPONSE=%s" % country_stats)
+        else:
+            logger.debug("Country Error")
+            logger.error("No country named {} in db".format(selection_country))
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
         logger.debug("RESULT=%s" % analysis_level_1.map_id_getter(**map_ids))
 
-    args = {k: v for k, v in vars(results).items() if v is not None}
-    logger.debug("Final Check %s" % args)
     # analysis_level_1.image_export(results.export, wp_gb)
+
 
 if __name__ == '__main__':
 
     # Updated upstream
     results = setup().parse_args()
-
     run(results)
-

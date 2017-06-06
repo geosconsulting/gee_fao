@@ -21,7 +21,6 @@ from bs4 import BeautifulSoup
 
 from .metadata_loader import load_metadata_from_csv, validate_metadata_from_csv
 
-
 def upload(user, source_path, destination_path, metadata_path=None, multipart_upload=False, nodata_value=None):
     """
     Uploads content of a given directory to GEE. The function first uploads an asset to Google Cloud Storage (GCS)
@@ -46,7 +45,6 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
 
     path = os.path.join(os.path.expanduser(source_path), '*.tif')
     all_images_paths = sorted(glob.glob(path))
-    print(all_images_paths)
 
     if len(all_images_paths) == 0:
         logging.error('%s does not contain any tif images.', path)
@@ -55,6 +53,7 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
     metadata = load_metadata_from_csv(metadata_path) if metadata_path else None
 
     password = getpass.getpass()
+
     google_session = __get_google_auth_session(user, password)
 
     __create_image_collection(destination_path)
@@ -121,6 +120,7 @@ def __verify_path_for_upload(path):
 
 
 def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
+    # type: (object, object) -> object
     local_assets = [__get_filename_from_path(path) for path in path_to_local_assets]
     if __collection_exist(path_remote):
         remote_assets = __get_asset_names_from_collection(path_remote)
@@ -141,11 +141,11 @@ def __find_remaining_assets_for_upload(path_to_local_assets, path_remote):
 def retry_if_ee_error(exception):
     return isinstance(exception, ee.EEException)
 
-
 @retrying.retry(retry_on_exception=retry_if_ee_error, wait_exponential_multiplier=1000, wait_exponential_max=4000, stop_max_attempt_number=3)
 def __upload_to_gcs_and_start_ingestion_task(asset_full_path, 
                                              google_session, 
-                                             image_path, properties,
+                                             image_path,
+                                             properties,
                                              multipart_upload, 
                                              nodata_value):
     asset_request = __upload_file(session=google_session,
@@ -224,9 +224,8 @@ def __get_upload_url(session):
     elif r.text.startswith('<HTML>'):
         logging.error('Pagina Redirecting credentials.')
         r = session.get('https://ee-api.appspot.com/assets/upload/geturl?')         
-    d = ast.literal_eval(r.text)    
+    d = ast.literal_eval(r.text)
     return d['url']
-
 
 
 def __upload_file(session, file_path, asset_name, use_multipart, properties=None, nodata=None):

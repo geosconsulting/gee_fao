@@ -6,9 +6,6 @@ import argparse
 #import datetime
 import logging
 import sys
-#import inspect
-
-
 from wpCalc import L1WaterProductivity
 
 # def valid_date(s):
@@ -21,6 +18,10 @@ from wpCalc import L1WaterProductivity
 
 def setup(args=None, parser=None):
 
+<<<<<<< Updated upstream
+
+=======
+>>>>>>> Stashed changes
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
 
     parser.add_argument("timeframe",
@@ -63,6 +64,10 @@ def setup(args=None, parser=None):
 
     return parser
 
+<<<<<<< Updated upstream
+
+=======
+>>>>>>> Stashed changes
 def run(results):
 
     logger = logging.getLogger("wpWin")
@@ -79,15 +84,25 @@ def run(results):
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+<<<<<<< Updated upstream
+
+    # results = parser.parse_args()
+    # logger.debug(results)
+=======
+>>>>>>> Stashed changes
 
     args_list = {k: v for k, v in vars(results).items() if v is not None}
     #logger.debug(len(args_list['timeframe']))
 
+<<<<<<< Updated upstream
+    # Metodo statico non devo inizializzare la classe molti saranno cosi alla fine
+=======
     # def methods(**kwargs):
     #     print kwargs
     # methods(**vars(results))
 
     # Static method many will be similar to reduce the verbosity of the code
+>>>>>>> Stashed changes
     # print L1WaterProductivity.water_productivity_net_biomass_pre_calculated_annual_values(2010)
 
     analysis_level_1 = L1WaterProductivity()
@@ -109,14 +124,18 @@ def run(results):
     analysis_level_1.image_selection()
 
     if results.aggregation:
-        logger.debug("Working on %s " % results.aggregation)
-        if results.aggregation == 'aet':
+        if isinstance(results.aggregation, list):
+            selection_aggregation = results.aggregation[0]
+        else:
+            selection_aggregation = results.aggregation
+        logger.debug("Working on %s " % selection_aggregation)
+        if selection_aggregation == 'aet':
             eta = analysis_level_1.aet_aggregated()
-        if results.aggregation == 'agbp':
+        if selection_aggregation == 'agbp':
             agbp = analysis_level_1.agbp_aggregated()
-        if results.aggregation == 'wp_gb':
+        if selection_aggregation == 'wp_gb':
             agbp, eta, wp_gb = analysis_level_1.water_productivity_gross_biomass()
-        if results.aggregation == 't_frac':
+        if selection_aggregation == 't_frac':
             eta = analysis_level_1.aet_aggregated()
             t_frac = analysis_level_1.transpiration()
 
@@ -131,8 +150,21 @@ def run(results):
             analysis_level_1.image_visualization(results.map, t_frac)
 
     if results.arealstat:
+<<<<<<< Updated upstream
+        if isinstance(results.arealstat, list):
+            selection_country = results.arealstat[0]
+        else:
+            selection_country = results.arealstat
+        country_stats = analysis_level_1.generate_areal_stats_fusion_tables(selection_country, wp_gb)
+        if country_stats != 'no country':
+            logger.debug("RESPONSE=%s" % country_stats)
+        else:
+            logger.debug("Country Error")
+            logger.error("No country named {} in db".format(selection_country))
+=======
         area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
         logger.debug(area_stats)
+>>>>>>> Stashed changes
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
@@ -148,4 +180,9 @@ if __name__ == '__main__':
     results = setup().parse_args()
 
     run(results)
+<<<<<<< Updated upstream
+=======
 
+
+
+>>>>>>> Stashed changes

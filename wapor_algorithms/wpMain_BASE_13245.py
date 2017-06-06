@@ -5,9 +5,11 @@
 import argparse
 #import datetime
 import logging
+#<<<<<<< Updated upstream
 import sys
+#=======
 #import inspect
-
+#>>>>>>> Stashed changes
 
 from wpCalc import L1WaterProductivity
 
@@ -20,6 +22,8 @@ from wpCalc import L1WaterProductivity
 
 
 def setup(args=None, parser=None):
+
+    # import ipdb; ipdb.set_trace()
 
     parser = argparse.ArgumentParser(description='Water Productivity using Google Earth Engine')
 
@@ -35,9 +39,7 @@ def setup(args=None, parser=None):
                         help="Generate map id for generating tiles",
                         action="store_true")
 
-    parser.add_argument('-s', '--arealstat',
-                        choices=['c','w','g'],
-                        nargs=argparse.REMAINDER,
+    parser.add_argument('-s', '--arealstat', #choices=['f', 'j'],
                         help="Zonal statistics form a WaterProductivity generated in GEE "
                              "for the chosen Country/Watershed or User Defined Area")
 
@@ -57,12 +59,15 @@ def setup(args=None, parser=None):
                         help="Show calculated output overlaid on Google Map"
                         )
 
-    parser.add_argument("-v", "--verbose",
-                        help="Increase output verbosity",
-                        action="store_true")
+    # parser.add_argument("-v", "--verbose",
+    #                     help="Increase output verbosity",
+    #                     action="store_true")
 
+    # return parser.parse_args()
+    # print 'wpMainParser='+str(parser.parse_args())
     return parser
 
+    #<<<<<<< Updated upstream
 def run(results):
 
     logger = logging.getLogger("wpWin")
@@ -79,16 +84,21 @@ def run(results):
     ch.setLevel(logging.DEBUG)
     ch.setFormatter(formatter)
     logger.addHandler(ch)
+    #=======
+    # results = parser.parse_args()
+    # logger.debug(results)
 
     args_list = {k: v for k, v in vars(results).items() if v is not None}
-    #logger.debug(len(args_list['timeframe']))
+    logger.debug(args_list)
+    logger.debug(len(args_list['timeframe']))
 
     # def methods(**kwargs):
     #     print kwargs
     # methods(**vars(results))
 
-    # Static method many will be similar to reduce the verbosity of the code
+    # Metodo statico non devo inizializzare la classe molti saranno cosi alla fine
     # print L1WaterProductivity.water_productivity_net_biomass_pre_calculated_annual_values(2010)
+    #>>>>>>> Stashed changes
 
     analysis_level_1 = L1WaterProductivity()
 
@@ -131,21 +141,32 @@ def run(results):
             analysis_level_1.image_visualization(results.map, t_frac)
 
     if results.arealstat:
-        area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
-        logger.debug(area_stats)
+        country_stats = analysis_level_1.generate_areal_stats_fusion_tables(results.arealstat, wp_gb)
+        if country_stats != 'no country':
+            logger.debug(country_stats)
+        else:
+            logger.debug("Country Error")
+            logger.error("No country named {} in db".format(results.arealstat))
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
         logger.debug("RESULT=%s" % analysis_level_1.map_id_getter(**map_ids))
 
-    args = {k: v for k, v in vars(results).items() if v is not None}
-    logger.debug("Final Check %s" % args)
     # analysis_level_1.image_export(results.export, wp_gb)
+
 
 if __name__ == '__main__':
 
     # Updated upstream
     results = setup().parse_args()
-
     run(results)
+    #=======
 
+    # vari = inspect.getargspec(main)
+    # print vari
+    # print inspect.getcallargs(main)
+    # print inspect.getsource(main)
+
+    #main()
+
+#>>>>>>> Stashed changes
