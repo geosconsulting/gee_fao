@@ -21,7 +21,7 @@ import glob
 # import pandas as pd
 import logging
 import json
-
+from geojson import FeatureCollection
 from osgeo import ogr
 
 
@@ -321,35 +321,44 @@ class L1WaterProductivity(WaterProductivityCalc):
         mapclient.addToMap(raster_plot, legend, raster_name)
         mapclient.centerMap(17.75, 10.14, 4)
 
-
-    def generate_areal_stats(self, fusion_table, query_object, wbpm_calc):
+    def generate_areal_stats(self, areal_option, query_object, wbpm_calc):
 
         """Calculates several statistics for the Water Productivity calculated raster for a chosen dataset / name"""
         num_areas = 0
-        if fusion_table == 'c':
+        if areal_option == 'c':
             try:
                 calculation_area = WaterProductivityCalc._COUNTRIES.filter(ee.Filter.eq('name', query_object))
                 num_areas = calculation_area.size().getInfo()
                 cut_poly = calculation_area.geometry()
             finally:
                 error = Exception('no country')
-        elif fusion_table == 'w':
+        elif areal_option == 'w':
             try:
                 calculation_area = WaterProductivityCalc._WSHEDS.filter(ee.Filter.eq('MAJ_NAME', query_object))
                 num_areas = calculation_area.size().getInfo()
                 cut_poly = calculation_area.geometry()
             finally:
                 error = Exception('no watershed')
-        elif fusion_table == 'g':
+        elif areal_option == 'g':
             try:
-                if os.path.isfile(query_object):
-                    with open(query_object) as f:
-                        data = json.load(f)
-                        if data:
-                            num_areas = 1
-                        cut_poly = data['features'][0]['geometry']
+                geojson_raw = {"type": "FeatureCollection",
+                                "crs": {"type": "name" , "properties": {"name": "urn:ogc:def:crs:OGC:1.3:CRS84"}} ,
+                                "features": [{"type": "Feature",
+                                              "properties": {"area": "user_defined"},
+                                              "geometry": {"type": "Polygon",
+                                                           "coordinates": [[[8.72 , 12.28],
+                                                                            [29.34 , 0.92],
+                                                                            [20.63 , -6.24],
+                                                                            [8.72 , 12.28]]]}
+                                              }
+                                            ]
+                                }
+                data = FeatureCollection ( geojson_raw )
+                cut_poly = data['features']['features'][0]['geometry']
+                if len(cut_poly)>0:
+                    num_areas = 1
             finally:
-                error = Exception('no file')
+                error = Exception('User defined area seems empty')
 
         if num_areas > 0:
             means = wbpm_calc.reduceRegion(
@@ -377,10 +386,10 @@ class L1WaterProductivity(WaterProductivityCalc):
             statistics_for_chosen_area = {}
             statistics_for_chosen_area['response'] = {}
             statistics_for_chosen_area['response']['name'] = query_object
-            if fusion_table == 'c':
+            if areal_option == 'c':
                 statistics_for_chosen_area['response']['iso3'] = calculation_area.getInfo()['features'][0]['properties']['iso3']
                 statistics_for_chosen_area['response']['gaul_code'] = calculation_area.getInfo()['features'][0]['properties']['gaul_code']
-            elif fusion_table == 'w':
+            elif areal_option == 'w':
                 statistics_for_chosen_area['response']['wshed_code'] = int(calculation_area.getInfo()['features'][0]['properties']['MAJ_BAS'])
                 statistics_for_chosen_area['response']['wapor_code'] = calculation_area.getInfo()['features'][0]['properties']['WaPOR_bas']
             statistics_for_chosen_area['response']['stats'] = {}
@@ -388,7 +397,6 @@ class L1WaterProductivity(WaterProductivityCalc):
             statistics_for_chosen_area['response']['stats']['sum'] = min_max_sum.pop('b1_sum')
             statistics_for_chosen_area['response']['stats']['max'] = min_max_sum.pop('b1_max')
             statistics_for_chosen_area['response']['stats']['mean'] = mean.pop('b1')
-
             return statistics_for_chosen_area
         else:
             self.L1_logger.error("Error: %s named %s" % (error, query_object))

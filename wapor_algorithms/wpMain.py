@@ -3,21 +3,13 @@
     Main class for activating different calculations available in wpCalc.py via argparse
 """
 import argparse
-#import datetime
 import logging
 import sys
-#import inspect
-
+import os
+import getpass
 
 from wpCalc import L1WaterProductivity
-
-# def valid_date(s):
-#     try:
-#         return datetime.datetime.strptime(s, "%Y-%m-%d").date()
-#     except ValueError:
-#         msg = "Not a valid date: '{0}'.".format(s)
-#         raise argparse.ArgumentTypeError(msg)
-
+import wpDataManagement as dm
 
 def setup(args=None, parser=None):
 
@@ -56,6 +48,12 @@ def setup(args=None, parser=None):
                         choices=['agbp', 'aet', 't_frac', 'wp_gb', 'wp_nb'],
                         help="Show calculated output overlaid on Google Map"
                         )
+
+    parser.add_argument ( "-u" ,
+                          "--upload" ,
+                          type=str,
+                          help="Upload or update data in Google Earth Engine"
+                          )
 
     parser.add_argument("-v", "--verbose",
                         help="Increase output verbosity",
@@ -137,6 +135,52 @@ def run(results):
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
         logger.debug("RESULT=%s" % analysis_level_1.map_id_getter(**map_ids))
+
+    if results.upload:
+
+        properties = None
+        no_data = None
+
+        username_gee = raw_input ( 'Please enter a valid GEE User Name: ' )
+        password_gee = getpass.getpass ( 'Please Enter a valid GEE Password: ' )
+        data_management_session = dm.DataManagement ( username_gee , password_gee )
+        active_session = data_management_session.create_google_session ()
+        upload_url = data_management_session.get_upload_url ( active_session )
+
+        files_repo = str ( results.upload )
+        try:
+            logger.debug ( "File %s found" % files_repo )
+            if os.path.isfile ( files_repo ):
+                gee_asset = '_'.join ( files_repo.split ( '/' )[-1].split ( "_" )[0:2] )
+                # gee_file = files_repo.split ( '/' )[-1].split ( "." )[0]
+                present_assets = data_management_session.get_assets_info ( gee_asset )
+                data_management_session.data_management ( active_session ,
+                                                          upload_url ,
+                                                          present_assets ,
+                                                          files_repo ,
+                                                          properties ,
+                                                          no_data )
+            elif os.path.isdir ( files_repo ):
+                new_files = []
+                root_dir = None
+                for (dirpath , dirnames , filenames) in os.walk ( files_repo ):
+                    new_files.extend ( filenames )
+                    root_dir = dirpath
+                    break
+
+                for each_file in new_files:
+                    file_temp = root_dir + "/" + each_file
+                    gee_asset = '_'.join ( each_file.split ( "_" )[0:2] )
+                    # gee_file = each_file.split ( "." )[0]
+                    present_assets = data_management_session.get_assets_info ( gee_asset )
+                    data_management_session.data_management ( active_session ,
+                                                              upload_url ,
+                                                              present_assets ,
+                                                              file_temp ,
+                                                              properties ,
+                                                              no_data )
+        except:
+            logger.error("File %s not found" % files_repo )
 
     args = {k: v for k, v in vars(results).items() if v is not None}
     logger.debug("Final Check %s" % args)

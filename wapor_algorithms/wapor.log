@@ -1,0 +1,5 @@
+ERROR 2017-06-08 15:42:22,497 wpDataManagement:127 data_management L1_AET_0910 already in collection
+ERROR 2017-06-08 15:59:11,266 wpDataManagement:127 data_management L1_AET_0910 already in collection
+ERROR 2017-06-08 16:00:55,813 wpDataManagement:127 data_management L1_TFRAC_0910 already in collection
+ERROR 2017-06-09 09:37:46,775 wpMain:185 run File ../snippets/files_test/L1_AET_0910.tif not found
+ERROR 2017-06-09 10:06:44,611 wpDataManagement:154 data_management L1_AET_0910 already in collection
