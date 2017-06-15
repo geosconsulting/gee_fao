@@ -7,13 +7,8 @@ import sys
 from bs4 import BeautifulSoup
 import logging
 import retrying
-
 import getpass
-
-if sys.version_info > (3 , 0):
-    from urllib.parse import unquote
-else:
-    from urllib import unquote
+from urllib import unquote
 
 class DataManagement():
     """Algorithm for managing assets in GEE"""
@@ -41,6 +36,9 @@ class DataManagement():
         self.logger.addHandler ( fh )
 
         ch = logging.StreamHandler ( sys.stdout )
+        ch.setLevel ( logging.DEBUG )
+        ch.setFormatter ( formatter )
+        self.logger.addHandler ( ch )
 
     @property
     def user_name(self):
@@ -63,6 +61,15 @@ class DataManagement():
         session = requests.session ()
         login_html = session.get ( DataManagement.__GOOGLE_ACCOUNT_URL )
 
+        #Check cookies returned because there is an issue with the authentication
+        #GAPS , GALX , NID - These cookies are used to identify the user when using Google + functionality.
+        #GAPS is still provided
+        self.logger.debug(session.cookies.get_dict ().keys ())
+        try:
+            galx = session.cookies['GALX']
+        except:
+            self.logger.error('No cookie GALX')
+
         soup_login = BeautifulSoup ( login_html.content , 'html.parser' ).find ( 'form' ).find_all ( 'input' )
         payload = {}
         for u in soup_login:
@@ -74,9 +81,13 @@ class DataManagement():
 
         auto = login_html.headers.get ( 'X-Auto-Login' )
         follow_up = unquote ( unquote ( auto ) ).split ( 'continue=' )[-1]
-        galx = login_html.cookies['GALX']
+        #Commented as suggested in https://github.com/tracek/gee_asset_manager/issues/36
+        #galx = login_html.cookies['GALX']
+
         payload['continue'] = follow_up
-        payload['GALX'] = galx
+
+        # Commented as suggested in https://github.com/tracek/gee_asset_manager/issues/36
+        #payload['GALX'] = galx
 
         session.post ( DataManagement.__AUTHENTICATION_URL , data=payload )
         return session
@@ -171,7 +182,6 @@ def main(argv):
         sys.exit ( 'Usage: wpDataManagement.py <directory_name>' )
 
     username_gee = raw_input ( 'Please Enter a User Name: ' )
-    #password_gee = hashlib.sha224 ( getpass.getpass ( 'Please Enter a Password: ' ) ).hexdigest ()
     password_gee = getpass.getpass ( 'Please Enter a Password: ' )
 
     properties = None

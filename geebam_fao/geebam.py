@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 import argparse
 import logging
-
 import ee
 
 from gee_asset_manager.batch_remover import delete

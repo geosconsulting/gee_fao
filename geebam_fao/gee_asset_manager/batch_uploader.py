@@ -66,7 +66,6 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
         sys.exit(1)
 
     failed_asset_writer = FailedAssetsWriter()
-    
     start = datetime.datetime.now()
 
     for current_image_no, image_path in enumerate(images_for_upload_path):
@@ -75,7 +74,6 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
                      no_images, 
                      image_path)
         filename = __get_filename_from_path(path=image_path)
-
         asset_full_path = destination_path + '/' + filename
 
         if metadata and not filename in metadata:
@@ -104,11 +102,9 @@ def upload(user, source_path, destination_path, metadata_path=None, multipart_up
     failed_asset_writer.close()
     
     end = datetime.datetime.now()
-
-    trascorso = end - start
-    trascorso_secondi = trascorso.seconds    
-    print("Ci ha messo %6f secondi" % trascorso_secondi)
-
+    elapsed = end - start
+    elapsed_seconds = elapsed.seconds
+    print("%6f seconds" % elapsed_seconds)
 
 def __verify_path_for_upload(path):
     folder = path[:path.rfind('/')]
@@ -187,12 +183,12 @@ def __extract_metadata_for_image(filename, metadata):
         logging.warning('Metadata for %s not found', filename)
         return None
 
-
 def __get_google_auth_session(username, password):
     google_accounts_url = 'https://accounts.google.com'
     authentication_url = 'https://accounts.google.com/ServiceLoginAuth'
 
     session = requests.session()
+    logging.debug(session.cookies.get_dict ().keys ())
 
     login_html = session.get(google_accounts_url)
     soup_login = BeautifulSoup(login_html.content, 'html.parser').find('form').find_all('input')
@@ -206,14 +202,13 @@ def __get_google_auth_session(username, password):
 
     auto = login_html.headers.get('X-Auto-Login')
     follow_up = unquote(unquote(auto)).split('continue=')[-1]
-    galx = login_html.cookies['GALX']
+    #galx = login_html.cookies['GALX']
 
     payload['continue'] = follow_up
-    payload['GALX'] = galx
+    #payload['GALX'] = galx
 
     session.post(authentication_url, data=payload)
     return session
-
 
 def __get_upload_url(session):
     r = session.get('https://ee-api.appspot.com/assets/upload/geturl?')    

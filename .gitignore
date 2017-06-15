@@ -1,4 +1,5 @@
 *.pyc
+*.ini
 .idea/
 diagram.png
 geebam_fao/
