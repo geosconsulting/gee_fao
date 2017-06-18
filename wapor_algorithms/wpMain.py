@@ -28,7 +28,7 @@ def setup(args=None, parser=None):
                         action="store_true")
 
     parser.add_argument('-s', '--arealstat',
-                        choices=['c','w','g'],
+                        choices=['c', 'w', 'g'],
                         nargs=argparse.REMAINDER,
                         help="Zonal statistics form a WaterProductivity generated in GEE "
                              "for the chosen Country/Watershed or User Defined Area")
@@ -107,14 +107,18 @@ def run(results):
     analysis_level_1.image_selection()
 
     if results.aggregation:
-        logger.debug("Working on %s " % results.aggregation)
-        if results.aggregation == 'aet':
+        if isinstance(results.aggregation, list):
+            selection_aggregation = results.aggregation[0]
+        else:
+            selection_aggregation = results.aggregation
+        logger.debug("Working on %s " % selection_aggregation)
+        if selection_aggregation == 'aet':
             eta = analysis_level_1.aet_aggregated()
-        if results.aggregation == 'agbp':
+        if selection_aggregation == 'agbp':
             agbp = analysis_level_1.agbp_aggregated()
-        if results.aggregation == 'wp_gb':
+        if selection_aggregation == 'wp_gb':
             agbp, eta, wp_gb = analysis_level_1.water_productivity_gross_biomass()
-        if results.aggregation == 't_frac':
+        if selection_aggregation == 't_frac':
             eta = analysis_level_1.aet_aggregated()
             t_frac = analysis_level_1.transpiration()
 
@@ -128,9 +132,29 @@ def run(results):
         if results.map == 't_frac':
             analysis_level_1.image_visualization(results.map, t_frac)
 
-    if results.arealstat:
-        area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
-        logger.debug(area_stats)
+    if isinstance(results.arealstat, list):
+
+        try:
+            area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
+            logger.debug("RESPONSE=%s" % area_stats)
+
+        except Exception as e:
+            if isinstance(e, UnboundLocalError):
+                logger.debug("WP_GP aggregation Error")
+                logger.error(e)
+            elif results.arealstat[0] == 'c':
+                logger.debug("Country Error")
+                logger.error("No country named {} in db".format(results.arealstat[1]))
+            elif results.arealstat[0] == 'w':
+                logger.debug("Watershed Error")
+                logger.error("No watershed named {} in db".format(results.arealstat[1]))
+            elif results.arealstat[0] == 'g':
+                logger.debug("User Defined Area format Error")
+                logger.error("Invalid GeoJson {} to parse".format(results.arealstat[1]))
+
+    else:
+
+        logger.debug("Invalid arealstat arguments format")
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
@@ -141,50 +165,51 @@ def run(results):
         properties = None
         no_data = None
 
-        username_gee = raw_input ( 'Please enter a valid GEE User Name: ' )
-        password_gee = getpass.getpass ( 'Please Enter a valid GEE Password: ' )
-        data_management_session = dm.DataManagement ( username_gee , password_gee )
-        active_session = data_management_session.create_google_session ()
-        upload_url = data_management_session.get_upload_url ( active_session )
+        username_gee = raw_input('Please enter a valid GEE User Name: ')
+        password_gee = getpass.getpass('Please Enter a valid GEE Password: ')
+        data_management_session = dm.DataManagement(username_gee, password_gee)
+        active_session = data_management_session.create_google_session()
+        upload_url = data_management_session.get_upload_url(active_session)
 
-        files_repo = str ( results.upload )
+        files_repo = str(results.upload)
         try:
-            logger.debug ( "File %s found" % files_repo )
-            if os.path.isfile ( files_repo ):
-                gee_asset = '_'.join ( files_repo.split ( '/' )[-1].split ( "_" )[0:2] )
+            logger.debug("File %s found" % files_repo)
+            if os.path.isfile(files_repo):
+                gee_asset = '_'.join(files_repo.split('/')[-1].split("_")[0:2])
                 # gee_file = files_repo.split ( '/' )[-1].split ( "." )[0]
-                present_assets = data_management_session.get_assets_info ( gee_asset )
-                data_management_session.data_management ( active_session ,
-                                                          upload_url ,
-                                                          present_assets ,
-                                                          files_repo ,
-                                                          properties ,
-                                                          no_data )
-            elif os.path.isdir ( files_repo ):
+                present_assets = data_management_session.get_assets_info(gee_asset)
+                data_management_session.data_management(active_session,
+                                                        upload_url,
+                                                        present_assets,
+                                                        files_repo,
+                                                        properties,
+                                                        no_data)
+            elif os.path.isdir(files_repo):
                 new_files = []
                 root_dir = None
-                for (dirpath , dirnames , filenames) in os.walk ( files_repo ):
-                    new_files.extend ( filenames )
+                for (dirpath, dirnames, filenames) in os.walk(files_repo):
+                    new_files.extend(filenames)
                     root_dir = dirpath
                     break
 
                 for each_file in new_files:
                     file_temp = root_dir + "/" + each_file
-                    gee_asset = '_'.join ( each_file.split ( "_" )[0:2] )
+                    gee_asset = '_'.join(each_file.split("_")[0:2])
                     # gee_file = each_file.split ( "." )[0]
-                    present_assets = data_management_session.get_assets_info ( gee_asset )
-                    data_management_session.data_management ( active_session ,
-                                                              upload_url ,
-                                                              present_assets ,
-                                                              file_temp ,
-                                                              properties ,
-                                                              no_data )
+                    present_assets = data_management_session.get_assets_info(gee_asset)
+                    data_management_session.data_management(active_session,
+                                                            upload_url,
+                                                            present_assets,
+                                                            file_temp,
+                                                            properties,
+                                                            no_data)
         except:
-            logger.error("File %s not found" % files_repo )
+            logger.error("File %s not found" % files_repo)
 
     args = {k: v for k, v in vars(results).items() if v is not None}
     logger.debug("Final Check %s" % args)
     # analysis_level_1.image_export(results.export, wp_gb)
+
 
 if __name__ == '__main__':
 
@@ -192,4 +217,3 @@ if __name__ == '__main__':
     results = setup().parse_args()
 
     run(results)
-
