@@ -31,6 +31,8 @@ Arguments:
 
     -a, --aggregation choices=['agbp', 'aet', 't_frac', 'wp_gb', 'wp_nb'],
                        help="which dataset must be calculated between the chosen timeframe"
+                       
+    -u --upload  help="Upload or update data in Google Earth Engine"
     
     -v, --verbose, help="Increase output verbosity" 
 
@@ -53,4 +55,21 @@ Arguments:
 * Generate map ID
 
     #### wpMain.py 2015 -a wp_gb -i
+
+###Example 3
+* Calculate Gross Biomass Water Productivity between first and 31st of January 2012
+  (Note the position of the parameter -i <b>BEFORE</b> -s)
+* Generate map ID
+* Calculate statistics for watershed named 'Rift Valley' 
+
+    #### wpMain.py 2012-01-01 2012-01-31 -a wp_gb -i -s w 'Rift Valley'  
+
+###Example 4
+Uploading or updating data in GEE. Valid credentials (a gmail account) must be provided.
+
+* Using wpDataManagement. Preferred method. </br>
+###wpDataManagement.py ../snippets/real_image/L1_AET_1525.tif
+
+* Using wpMain.py . Passing 0 water productivity will not be calculated.</br>
+### wpMain.py 0 -u '../snippets/files_test/L1_AET_0910.tif'
 

@@ -35,7 +35,6 @@ def validate_metadata_from_csv(path):
                 success = False
 
         logging.info('Validation successful') if success else logging.error('Validation failed')
-
         return ValidationResult(success=success, keys=all_keys)
 
 

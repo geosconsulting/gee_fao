@@ -9,6 +9,10 @@ import logging
 import retrying
 import getpass
 from urllib import unquote
+from datetime import date, datetime
+import calendar
+import re
+import time
 
 class DataManagement():
     """Algorithm for managing assets in GEE"""
@@ -68,7 +72,7 @@ class DataManagement():
         try:
             galx = session.cookies['GALX']
         except:
-            self.logger.error('No cookie GALX')
+            self.logger.info('No cookie GALX')
 
         soup_login = BeautifulSoup ( login_html.content , 'html.parser' ).find ( 'form' ).find_all ( 'input' )
         payload = {}
@@ -172,16 +176,104 @@ class DataManagement():
             self.__delete_image(image_name)
             self.__upload_image ( file_path , session , upload_url , image_name , properties , nodata )
 
-    def task_management(self):
-        pass
+    def get_days_in_dekad(self, year , dekad):
+        dekads_eleven = [3 , 8 , 15 , 20 , 24 , 30 , 36]
+        if dekad == 6:
+            days = calendar.monthrange ( year , 2 )[1] - 20
+        elif dekad in dekads_eleven:
+            days = 11
+        else:
+            days = 10
+        return days
+
+    def get_month_of_dekad(self,dekad):
+
+        if dekad < 3:
+            month_dekad = 1
+        elif dekad > 3 and dekad <= 6:
+            month_dekad = 2
+        elif dekad > 6 and dekad <= 9:
+            month_dekad = 3
+        elif dekad > 9 and dekad <= 12:
+            month_dekad = 4
+        elif dekad > 12 and dekad <= 15:
+            month_dekad = 5
+        elif dekad > 15 and dekad <= 18:
+            month_dekad = 6
+        elif dekad > 18 and dekad <= 21:
+            month_dekad = 7
+        elif dekad > 21 and dekad <= 24:
+            month_dekad = 8
+        elif dekad > 24 and dekad <= 27:
+            month_dekad = 9
+        elif dekad > 27 and dekad <= 30:
+            month_dekad = 10
+        elif dekad > 30 and dekad <= 33:
+            month_dekad = 11
+        else:
+            month_dekad = 12
+
+        return month_dekad
+
+    def get_starting_day_of_dekad(self, year , month , dekad):
+
+        first_dekads = range ( 1 , 37 , 3 )
+        second_dekads = range ( 2 , 37 , 3 )
+        thirds_dekads = range ( 3 , 37 , 3 )
+
+        month_year = (str ( month ) , str ( year ))
+        final_date = None
+        if dekad in first_dekads:
+            final_date = ('01' ,) + month_year + ('12:00:00' ,)
+        elif dekad in second_dekads:
+            final_date = ('11' ,) + month_year + ('12:00:00' ,)
+        elif dekad in thirds_dekads:
+            final_date = ('21' ,) + month_year + ('12:00:00' ,)
+
+        starting_day = '-'.join ( final_date )
+
+        return starting_day
+
+    def metadata_generator(self,gee_file):
+
+        gee_asset = gee_file.split ( '.' )[0]
+        level = int(re.split ( '(\d.*)' , gee_file.split ( "_" )[0] )[1])
+        area = 'AfNE'
+
+        initial_date = datetime.strptime ( '1970-1-1' , "%Y-%m-%d" )
+        date_part = gee_file.split ( '_' )[2]
+        year = int ( '20' + gee_file.split ( '_' )[2][0:2] )
+
+        number_of_days = 0
+        if len ( date_part ) == 4:
+            dekad = int ( gee_file.split ( '_' )[2][2:4] )
+            number_of_days = self.get_days_in_dekad ( year , dekad )
+            month = self.get_month_of_dekad ( dekad )
+            start_date = datetime.strptime ( self.get_starting_day_of_dekad ( year , month , dekad ) , "%d-%m-%Y-%H:%M:%S" )
+        elif len ( date_part ) == 6:
+            month = int ( gee_file.split ( '_' )[2][2:4] )
+            day = int ( gee_file.split ( '_' )[2][4:6] )
+            s = str ( day ) + "-" + str ( month ) + "-" + str ( year ) + "-" + '12:00:00'
+            start_date = datetime.strptime ( s , "%d-%m-%Y-%H:%M:%S" )
+
+        unix_time_manual = (start_date - initial_date).total_seconds () * 1000
+        metadata = {'id_no': gee_file , 'system:time_start': unix_time_manual , 'level': level , 'area': area}
+
+        if number_of_days != 0:
+            metadata['days_in_dk'] = number_of_days
+
+        return metadata
 
 def main(argv):
 
     if len ( argv ) != 1:
-        print '\nUser & Password Storage Program v.01\n'
+        print '\nSend a filename or directory\n'
         sys.exit ( 'Usage: wpDataManagement.py <directory_name>' )
 
-    username_gee = raw_input ( 'Please Enter a User Name: ' )
+    # username_gee = raw_input ( 'Please Enter a User Name: ' )
+    # password_gee = getpass.getpass ( 'Please Enter a Password: ' )
+
+    username_gee = 'fabiolana.notizie@gmail.com'
     password_gee = getpass.getpass ( 'Please Enter a Password: ' )
 
     properties = None
@@ -194,36 +286,48 @@ def main(argv):
     active_session = data_management_session.create_google_session ()
     upload_url = data_management_session.get_upload_url(active_session)
 
-    path_test = argv[0]
-    if os.path.isfile ( path_test ):
-        gee_asset = '_'.join (path_test.split('/')[-1].split ( "_" )[0:2] )
-        #gee_file = path_test.split('/')[-1].split ( "." )[0]
+    path_or_file = argv[0]
+    # Receives one single file
+    if os.path.isfile ( path_or_file ):
+        gee_asset = '_'.join (path_or_file.split('/')[-1].split ( "_" )[0:2] )
+        file_only = os.path.split ( path_or_file )[1]
+        gee_file = file_only.split ( "." )[0]
+
+        properties = data_management_session.metadata_generator ( gee_file )
+        data_management_session.logger.info(properties)
+
         present_assets = data_management_session.get_assets_info ( gee_asset )
         data_management_session.data_management ( active_session ,
                                                   upload_url ,
                                                   present_assets ,
-                                                  path_test ,
+                                                  path_or_file,
                                                   properties ,
                                                   no_data )
-    elif os.path.isdir ( path_test ):
-        new_files = []
+
+    # Receives un directory containing al new files sent from FRAME
+    elif os.path.isdir ( path_or_file ):
+        new_released_files = []
         root_dir = None
-        for (dirpath , dirnames , filenames) in os.walk ( path_test ):
-            new_files.extend (filenames )
+        for (dirpath , dirnames , filenames) in os.walk ( path_or_file ):
+            new_released_files.extend (filenames )
             root_dir = dirpath
             break
 
-        for each_file in new_files:
+        for each_file in new_released_files:
             file_temp = root_dir + "/" + each_file
             gee_asset = '_'.join ( each_file.split ( "_" )[0:2] )
-            #gee_file = each_file.split ( "." )[0]
-            present_assets = data_management_session.get_assets_info (gee_asset)
-            data_management_session.data_management ( active_session ,
-                                                      upload_url ,
-                                                      present_assets ,
-                                                      file_temp ,
-                                                      properties ,
-                                                      no_data )
+
+            gee_file = each_file.split ( "." )[0]
+            properties = data_management_session.metadata_generator ( gee_file )
+            print properties
+
+            # present_assets = data_management_session.get_assets_info (gee_asset)
+            # data_management_session.data_management ( active_session ,
+            #                                           upload_url ,
+            #                                           present_assets ,
+            #                                           file_temp ,
+            #                                           properties ,
+            #                                           no_data )
 
 if __name__ == "__main__":
     main ( sys.argv[1:] )

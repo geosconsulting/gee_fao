@@ -28,7 +28,7 @@ def setup(args=None, parser=None):
                         action="store_true")
 
     parser.add_argument('-s', '--arealstat',
-                        choices=['c', 'w', 'g'],
+                        choices=['c','w','g'],
                         nargs=argparse.REMAINDER,
                         help="Zonal statistics form a WaterProductivity generated in GEE "
                              "for the chosen Country/Watershed or User Defined Area")
@@ -132,36 +132,34 @@ def run(results):
         if results.map == 't_frac':
             analysis_level_1.image_visualization(results.map, t_frac)
 
-    if isinstance(results.arealstat, list):
-
-        try:
-            area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
-            logger.debug("RESPONSE=%s" % area_stats)
-
-        except Exception as e:
-            if isinstance(e, UnboundLocalError):
-                logger.debug("WP_GP aggregation Error")
-                logger.error(e)
-            elif results.arealstat[0] == 'c':
-                logger.debug("Country Error")
-                logger.error("No country named {} in db".format(results.arealstat[1]))
-            elif results.arealstat[0] == 'w':
-                logger.debug("Watershed Error")
-                logger.error("No watershed named {} in db".format(results.arealstat[1]))
-            elif results.arealstat[0] == 'g':
-                logger.debug("User Defined Area format Error")
-                logger.error("Invalid GeoJson {} to parse".format(results.arealstat[1]))
-
+    if results.arealstat is not None:
+        if isinstance(results.arealstat, list) :
+            try:
+                area_stats = analysis_level_1.generate_areal_stats(results.arealstat[0], results.arealstat[1], wp_gb)
+                logger.debug("RESPONSE=%s" % area_stats)
+            except Exception as e:
+                if isinstance(e, UnboundLocalError):
+                    logger.debug("WP_GP aggregation Error")
+                    logger.error(e)
+                elif results.arealstat[0] == 'c':
+                    logger.debug("Country Error")
+                    logger.error("No country named {} in db".format(results.arealstat[1]))
+                elif results.arealstat[0] == 'w':
+                    logger.debug("Watershed Error")
+                    logger.error("No watershed named {} in db".format(results.arealstat[1]))
+                elif results.arealstat[0] == 'g':
+                    logger.debug("User Defined Area format Error")
+                    logger.error("Invalid GeoJson {} to parse".format(results.arealstat[1]))
+        else:
+            logger.debug("Invalid arealstat arguments format")
     else:
-
-        logger.debug("Invalid arealstat arguments format")
+        pass
 
     if results.map_id:
         map_ids = {'agbp': agbp, 'eta': eta, 'wp_gross': wp_gb}
         logger.debug("RESULT=%s" % analysis_level_1.map_id_getter(**map_ids))
 
     if results.upload:
-
         properties = None
         no_data = None
 
@@ -208,12 +206,11 @@ def run(results):
 
     args = {k: v for k, v in vars(results).items() if v is not None}
     logger.debug("Final Check %s" % args)
-    # analysis_level_1.image_export(results.export, wp_gb)
 
+    # analysis_level_1.image_export(results.export, wp_gb)
 
 if __name__ == '__main__':
 
     # Updated upstream
     results = setup().parse_args()
-
     run(results)

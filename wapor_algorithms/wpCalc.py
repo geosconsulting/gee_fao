@@ -20,8 +20,8 @@ import glob
 # import datetime
 # import pandas as pd
 import logging
-import json
 from geojson import FeatureCollection
+import json
 from osgeo import ogr
 
 
@@ -261,6 +261,8 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         agbp_t_coll_merged = AGBP_T_collection_Join.map(MergeBands)
         self.L1_logger.debug("Merged Joined collections", agbp_t_coll_merged)
+        print("Merged Joined collections", agbp_t_coll_merged)
+
 
         # MERGING JOINED TWO Collections - End
 
@@ -271,6 +273,7 @@ class L1WaterProductivity(WaterProductivityCalc):
 
         WPnb_coll = agbp_t_coll_merged.map(AGBP_T)
         self.L1_logger.debug("WPnb_coll", WPnb_coll)
+        print("WPnb_coll", WPnb_coll)
 
     def map_id_getter(self,**outputs_id):
 
@@ -353,7 +356,7 @@ class L1WaterProductivity(WaterProductivityCalc):
                                               }
                                             ]
                                 }
-                data = FeatureCollection ( geojson_raw )
+                data = FeatureCollection ( query_object )
                 cut_poly = data['features']['features'][0]['geometry']
                 if len(cut_poly)>0:
                     num_areas = 1
