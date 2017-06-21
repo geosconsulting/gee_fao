@@ -68,7 +68,7 @@ class DataManagement():
         #Check cookies returned because there is an issue with the authentication
         #GAPS , GALX , NID - These cookies are used to identify the user when using Google + functionality.
         #GAPS is still provided
-        self.logger.debug(session.cookies.get_dict ().keys ())
+        #self.logger.debug(session.cookies.get_dict ().keys ())
         try:
             galx = session.cookies['GALX']
         except:
@@ -234,6 +234,33 @@ class DataManagement():
 
         return starting_day
 
+    def no_data_assessment(self,path_test):
+
+        file_only = os.path.split ( path_test )[1]
+        level , data_component_code = file_only.split ( '_' )[0] , file_only.split ( '_' )[1]
+
+        if level == 'L5':
+            if data_component_code == 'AET':
+                no_data = 255
+            elif data_component_code == 'NPP':
+                no_data = -9999
+            elif data_component_code == 'AGBP':
+                no_data = -9999
+            elif data_component_code == 'RET':
+                no_data = 255
+            elif data_component_code == 'PCP':
+                no_data = -9999
+            elif data_component_code == 'LCC':
+                no_data = 255
+            elif data_component_code == 'TFRAC':
+                no_data = 255
+            else:
+                no_data = None
+        else:
+            no_data = None
+
+        return no_data
+
     def metadata_generator(self,gee_file):
 
         gee_asset = gee_file.split ( '.' )[0]
@@ -270,31 +297,28 @@ def main(argv):
         print '\nSend a filename or directory\n'
         sys.exit ( 'Usage: wpDataManagement.py <directory_name>' )
 
-    # username_gee = raw_input ( 'Please Enter a User Name: ' )
-    # password_gee = getpass.getpass ( 'Please Enter a Password: ' )
-
-    username_gee = 'fabiolana.notizie@gmail.com'
-    password_gee = getpass.getpass ( 'Please Enter a Password: ' )
-
-    properties = None
-    no_data = None
+    username_gee = raw_input ( 'Please Enter a Valid GEE User Name (without @gmail.com): ' ) + "@gmail.com"
+    password_gee = getpass.getpass ( 'Please Enter a Valid GEE Password: ' )
 
     #gee_root = 'projects/fao-wapor/'
-    #gee_root = 'users/fabiolananotizie/'
 
     data_management_session = DataManagement ( username_gee , password_gee )
     active_session = data_management_session.create_google_session ()
     upload_url = data_management_session.get_upload_url(active_session)
 
     path_or_file = argv[0]
+
     # Receives one single file
     if os.path.isfile ( path_or_file ):
         gee_asset = '_'.join (path_or_file.split('/')[-1].split ( "_" )[0:2] )
         file_only = os.path.split ( path_or_file )[1]
         gee_file = file_only.split ( "." )[0]
 
+        no_data = data_management_session.no_data_assessment ( path_or_file )
         properties = data_management_session.metadata_generator ( gee_file )
+
         data_management_session.logger.info(properties)
+        data_management_session.logger.info (no_data )
 
         present_assets = data_management_session.get_assets_info ( gee_asset )
         data_management_session.data_management ( active_session ,
@@ -314,20 +338,22 @@ def main(argv):
             break
 
         for each_file in new_released_files:
+            no_data = data_management_session.no_data_assessment ( each_file )
             file_temp = root_dir + "/" + each_file
             gee_asset = '_'.join ( each_file.split ( "_" )[0:2] )
-
             gee_file = each_file.split ( "." )[0]
             properties = data_management_session.metadata_generator ( gee_file )
-            print properties
 
-            # present_assets = data_management_session.get_assets_info (gee_asset)
-            # data_management_session.data_management ( active_session ,
-            #                                           upload_url ,
-            #                                           present_assets ,
-            #                                           file_temp ,
-            #                                           properties ,
-            #                                           no_data )
+            data_management_session.logger.info ( properties )
+            data_management_session.logger.info ( no_data )
+
+            present_assets = data_management_session.get_assets_info (gee_asset)
+            data_management_session.data_management ( active_session ,
+                                                      upload_url ,
+                                                      present_assets ,
+                                                      file_temp ,
+                                                      properties ,
+                                                      no_data )
 
 if __name__ == "__main__":
     main ( sys.argv[1:] )

@@ -41,20 +41,20 @@ Arguments:
     -m,--map, choices=['agbp', 'aet', 't_frac', 'wp_gb', 'wp_nb']
                         help="Show calculated output overlaid on Google Map"
 
-# Simple Use
+## Simple Use
 ###Example 1
 * Calculate Gross Biomass Water Productivity between 1st of January 2015 and 30th of January 2015 
 * Statistics calculated for Benin
 * Generate map ID
 
-    #### wpMain.py 2015-1-1 2015-1-30 -a wp_gb -i -s "Benin" 
+    ##### wpMain.py 2015-1-1 2015-1-30 -a wp_gb -i -s "Benin" 
 
 ###Example 2
 * Calculate Gross Biomass Water Productivity for 2015 (already stored from 2010-2016)
   Will be possible to calculate new dataset only from 2017 onwards
 * Generate map ID
 
-    #### wpMain.py 2015 -a wp_gb -i
+    ##### wpMain.py 2015 -a wp_gb -i
 
 ###Example 3
 * Calculate Gross Biomass Water Productivity between first and 31st of January 2012
@@ -62,14 +62,14 @@ Arguments:
 * Generate map ID
 * Calculate statistics for watershed named 'Rift Valley' 
 
-    #### wpMain.py 2012-01-01 2012-01-31 -a wp_gb -i -s w 'Rift Valley'  
+    ##### wpMain.py 2012-01-01 2012-01-31 -a wp_gb -i -s w 'Rift Valley'  
 
 ###Example 4
 Uploading or updating data in GEE. Valid credentials (a gmail account) must be provided.
 
 * Using wpDataManagement. Preferred method. </br>
-###wpDataManagement.py ../snippets/real_image/L1_AET_1525.tif
+    ##### wpDataManagement.py ../snippets/real_image/L1_AET_1525.tif
 
 * Using wpMain.py . Passing 0 water productivity will not be calculated.</br>
-### wpMain.py 0 -u '../snippets/files_test/L1_AET_0910.tif'
+    ##### wpMain.py 0 -u '../snippets/files_test/L1_AET_0910.tif'
 
