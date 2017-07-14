@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "fao-wapor",
+  "private_key_id": "60f6bfb41ef2440dec15f3434f93a40c3415a0bc",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCXdtaN/YOF7Z5Q\nsRS188QDjDreeLIfjgQk9WoqkzGOufgMFF91gfv5xNnPAs8Umhs7iF06wSp6s1jw\n4MMnL+08GKyPrbf7iGmKpzgjed02W+HEbVTLu/cxTdWDnCC4LMy/Syont693UvyD\nlVv7ff8p5jpid+Gc4tTt9cK/GYtdAuSWFZnaxyko9mLACbzpUln7qXIYZiiqKASR\nAbLYw4/SfFssOJdatIILHpUu7ZwYg7lG1OXKfj93IUV5hdy32KZf2cTQVyZIxX5W\nHVR1GilWffFgK+tnMCAYqp5QWXBHsjX6d4+PhNCWtH5xmAEjt5Q1TAvCyEAaFk9J\ndkQnl4jHAgMBAAECggEAKLiK826ycwnQ0+nf4xEv5DJJy3EQlno0dAlE60BahQBL\nh1fc2DdDmsGJO2YKbYQHCUjeo8K2HHnmUhBjd0Aj3FHX5uLyAV6J3Xyak7MaPZiT\nSJ+KOiIFUcyWuET76PgmbdGT+kygkIiPmgLIUYNs3ANpM/r9/ZNgYr99haok9TK9\nRjMzjfHWh4mhfmpxsM2g92UJmKPxYyy1SHg+R5lpmgJCivsa9FbR0jNrJgXEcY45\nLD+B1gpXTMRms7LT3EV/c9b8nXJUwXq8nlGkChjrK2SvcWKfz+zA7GKwvI8x7bA2\nnC9ki6BJgem/sGAoufbanktynFeFWUnPtawOD451GQKBgQDTDbYe3pYuPA2/mCJk\npzcEacGvH38s9MzbBbENhCu3KIJNc5aZa8P4mWwzihhaSDwheYU+q+xXyj8KiMvQ\ng26E/t5QEfXnoVnLt5Xeod4wyElvXV0quqaBZa1rWEhz6HjZPd8ZpxtZsM3Ks/pg\n4b/kbv6ZQeel7RqoeuuKQxE4WQKBgQC3uGomBchCnXW7QIvfp1mWsK+KV24BD49q\n8DEkfmB1H963QsLfb+I3RArF4CDpdLS6F3k/x1ci1Hzhk3oWrdERT81a48AJ4Pxx\n7S4XnQLlTov90mUT55k0caf5sqr5s0RfBO/qrDn+vp/mKbsaxlJP8a+so3DW9GzX\nssW/jrimHwKBgB2YYJ93iwu0tCDXzorav+ZIhjZubkD5mvhjle5VSGQItCz0NnwR\nFov3x6p6hOu0EWqIRd0B8sRkwe5SPHJi286ehsInopn2kEb22Xc8r5GbpGCPcQ8a\n2VpvzZ+t44sNYFTmTjCktDshhdoU3tlTDruTrPQEv90OoJxbkEf1G6cRAoGBAK4w\namw8hUArvOlabIQUToviX71B4emdkDQrIdzg+aFzIx4MbWmd0hTmLXSpaWsPnR7n\njK1c2hAK+ZCC3HnOOXA5gpHPaE+1goSeBVqcIpe5Xl+88NrrdkXUERhdP2BaiNOy\ngaq1upL+t+po3J6pNHfZxd9gY2da/iuQs49IyWevAoGBAK5p54u91SSaQ/Coy1Uh\nO98IgMcKvmTHgg/a+PMEYYdHDqyFGFQoLDrBQCtJIIsO60wpthE8PZv7lKXSvTfz\nLK9M+MbaDaqkfrdtmucQFnZAXNbmRNMF+rIQj2ElNjIL/UzFvRawoyzdd6ztX6uJ\n+gCUBx2yoGmxsM+ipmPuT/Fh\n-----END PRIVATE KEY-----\n",
+  "client_email": "fao-wapor@fao-wapor.iam.gserviceaccount.com",
+  "client_id": "103283993465834459813",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://accounts.google.com/o/oauth2/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/fao-wapor%40fao-wapor.iam.gserviceaccount.com"
+}
